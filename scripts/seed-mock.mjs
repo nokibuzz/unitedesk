@@ -4,58 +4,43 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const folder = path.join(root, 'mock', 'jira');
-const status = (name, key) => ({ name, statusCategory: { key } });
-const task = (key, summary, state, category, assignee = null) => ({
-  key,
-  fields: { summary, status: status(state, category), assignee: assignee ? { displayName: assignee } : null },
+const statuses = [
+  { id: '1', name: 'To Do', category: 'new' },
+  { id: '2', name: 'In Progress', category: 'indeterminate' },
+  { id: '3', name: 'Development Done', category: 'indeterminate' },
+  { id: '4', name: 'In Testing', category: 'indeterminate' },
+  { id: '5', name: 'Done', category: 'done' },
+];
+const state = (name) => {
+  const found = statuses.find((item) => item.name === name);
+  return { id: found.id, name, statusCategory: { key: found.category } };
+};
+const at = (hoursAgo) => new Date(Date.now() - hoursAgo * 3_600_000).toISOString();
+const task = (key, summary, status, created, assignee = null) => ({
+  key, fields: { summary, status: state(status), created: at(created), assignee: assignee ? { displayName: assignee } : null },
 });
-
+const issue = (key, summary, type, status, created, assignee, subtasks, estimate, spent, points) => ({
+  key, fields: { summary, issuetype: { name: type, subtask: false }, status: state(status), created: at(created),
+    assignee: assignee ? { displayName: assignee } : null, subtasks,
+    timetracking: { originalEstimateSeconds: estimate, timeSpentSeconds: spent }, customfield_10016: points, updated: at(1) },
+});
 const sprint = { id: 101, name: 'Example Sprint 12', goal: 'Ship the team workspace foundation' };
 const issues = [
-  {
-    key: 'DEMO-101',
-    fields: {
-      summary: 'Add search to the team workspace', issuetype: { name: 'Story', subtask: false },
-      status: status('In Progress', 'indeterminate'), assignee: { displayName: 'Alex Morgan' },
-      subtasks: [task('DEMO-105', 'Implement search UI', 'In Progress', 'indeterminate')],
-      timetracking: { originalEstimateSeconds: 28800, timeSpentSeconds: 10800 },
-      customfield_10016: 5, updated: '2026-11-12T09:30:00.000Z',
-    },
-  },
-  {
-    key: 'DEMO-102',
-    fields: {
-      summary: 'Show current sprint tickets', issuetype: { name: 'Task', subtask: false },
-      status: status('Development Done', 'indeterminate'), assignee: { displayName: 'Sam Taylor' },
-      subtasks: [task('DEMO-106', 'Test the solution', 'To Do', 'new')],
-      timetracking: { originalEstimateSeconds: 14400, timeSpentSeconds: 7200 },
-      customfield_10016: 3, updated: '2026-11-11T13:20:00.000Z',
-    },
-  },
-  {
-    key: 'DEMO-103',
-    fields: {
-      summary: 'Handle empty states consistently', issuetype: { name: 'Bug', subtask: false },
-      status: status('In Testing', 'indeterminate'), assignee: { displayName: 'Jordan Lee' },
-      subtasks: [task('DEMO-107', 'Test the solution', 'In Progress', 'indeterminate', 'Casey Quinn')],
-      timetracking: { originalEstimateSeconds: 7200, timeSpentSeconds: 3600 },
-      customfield_10016: 2, updated: '2026-11-12T10:45:00.000Z',
-    },
-  },
-  {
-    key: 'DEMO-104',
-    fields: {
-      summary: 'Document the first team setup', issuetype: { name: 'Story', subtask: false },
-      status: status('To Do', 'new'), assignee: null, subtasks: [],
-      timetracking: { originalEstimateSeconds: 10800, timeSpentSeconds: 0 },
-      customfield_10016: null, updated: '2026-11-10T08:00:00.000Z',
-    },
-  },
+  issue('DEMO-101', 'Add search to the team workspace', 'Story', 'In Progress', 96, 'Alex Morgan', [task('DEMO-105', 'Implement search UI', 'In Progress', 70)], 28800, 10800, 5),
+  issue('DEMO-102', 'Show current sprint tickets', 'Task', 'Development Done', 72, 'Sam Taylor', [task('DEMO-106', 'Test the solution', 'To Do', 20)], 14400, 7200, 3),
+  issue('DEMO-103', 'Handle empty states consistently', 'Bug', 'In Testing', 80, 'Jordan Lee', [task('DEMO-107', 'Test the solution', 'In Testing', 28, 'Casey Quinn')], 7200, 3600, 2),
+  issue('DEMO-104', 'Document the first team setup', 'Story', 'To Do', 48, null, [], 10800, 0, null),
 ];
-
+const transition = (hoursAgo, from, to) => ({ created: at(hoursAgo), items: [{ field: 'status', fromString: from, toString: to }] });
+const changelogs = {
+  'DEMO-101': [transition(40, 'To Do', 'In Progress')],
+  'DEMO-102': [transition(50, 'To Do', 'In Progress'), transition(22, 'In Progress', 'Development Done')],
+  'DEMO-103': [transition(60, 'To Do', 'In Progress'), transition(18, 'In Progress', 'In Testing')],
+  'DEMO-104': [],
+  'DEMO-106': [],
+  'DEMO-107': [transition(8, 'To Do', 'In Testing')],
+};
 await mkdir(folder, { recursive: true });
-await Promise.all([
-  writeFile(path.join(folder, 'sprint.json'), `${JSON.stringify(sprint, null, 2)}\n`),
-  writeFile(path.join(folder, 'issues.json'), `${JSON.stringify(issues, null, 2)}\n`),
-]);
+await Promise.all(Object.entries({ 'sprint.json': sprint, 'issues.json': issues, 'statuses.json': statuses, 'changelogs.json': changelogs }).map(([name, value]) =>
+  writeFile(path.join(folder, name), `${JSON.stringify(value, null, 2)}\n`)));
 console.log(`Created local mock data in ${folder}`);

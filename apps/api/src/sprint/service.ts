@@ -1,14 +1,17 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { JiraIssue, JiraSprint, SprintSnapshot, SprintTicket } from './types.js';
+import { elapsedSince, enteredAt, testingElapsed, waitingForTestElapsed } from './history.js';
+import { getStatusMapping, saveStatusMapping } from './mapping.js';
+import type { JiraHistory, JiraIssue, JiraSprint, JiraStatus, SprintSnapshot, SprintTicket, StatusMapping } from './types.js';
+
+type Data = { base: string; board: number; sprint: JiraSprint | null; issues: JiraIssue[]; pointsField: string | null; statuses: JiraStatus[]; histories: Record<string, JiraHistory[] | null> };
 
 function requiredUrl(raw: string | undefined): string {
   if (!raw) throw new Error('Set JIRA_URL to your Jira base URL');
   const url = new URL(raw);
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new Error('JIRA_URL must be an HTTP URL');
+  if (!['https:', 'http:'].includes(url.protocol)) throw new Error('JIRA_URL must be an HTTP URL');
   return url.toString().replace(/\/$/, '');
 }
-
 function boardId(): number {
   const fromId = Number(process.env.JIRA_BOARD_ID);
   if (Number.isInteger(fromId) && fromId > 0) return fromId;
@@ -18,106 +21,139 @@ function boardId(): number {
   if (!Number.isInteger(id) || id < 1) throw new Error('Set JIRA_BOARD_URL or JIRA_BOARD_ID');
   return id;
 }
-
 async function jiraGet<T>(base: string, endpoint: string, query?: Record<string, string>): Promise<T> {
   const email = process.env.JIRA_EMAIL?.trim();
   const token = process.env.JIRA_API_TOKEN?.trim();
   if (!email || !token) throw new Error('Set JIRA_EMAIL and JIRA_API_TOKEN for local Jira access');
   const url = new URL(endpoint, `${base}/`);
   for (const [name, value] of Object.entries(query ?? {})) url.searchParams.set(name, value);
-  const response = await fetch(url, {
-    headers: { Authorization: `Basic ${Buffer.from(`${email}:${token}`).toString('base64')}`, Accept: 'application/json' },
-    signal: AbortSignal.timeout(15_000),
-  });
+  const response = await fetch(url, { headers: { Authorization: `Basic ${Buffer.from(`${email}:${token}`).toString('base64')}`, Accept: 'application/json' }, signal: AbortSignal.timeout(15_000) });
   if (!response.ok) throw new Error(`Jira request failed (${response.status})`);
   return response.json() as Promise<T>;
 }
-
-async function liveData(): Promise<{ base: string; board: number; sprint: JiraSprint | null; issues: JiraIssue[]; pointsField: string | null }> {
-  const boardUrl = process.env.JIRA_BOARD_URL?.trim();
-  const inferredBase = boardUrl ? new URL(boardUrl).origin : undefined;
-  const base = requiredUrl(process.env.JIRA_URL?.trim() || inferredBase);
-  const board = boardId();
-  const sprints = await jiraGet<{ values?: JiraSprint[] }>(base, `/rest/agile/1.0/board/${board}/sprint`, { state: 'active', maxResults: '50' });
-  const sprint = sprints.values?.[0] ?? null;
-  if (!sprint) return { base, board, sprint: null, issues: [], pointsField: null };
-  let pointsField = process.env.JIRA_STORY_POINTS_FIELD?.trim() || null;
-  if (!pointsField) {
-    try {
-      const config = await jiraGet<{ estimation?: { field?: { fieldId?: string } } }>(base, `/rest/agile/1.0/board/${board}/configuration`);
-      pointsField = config.estimation?.field?.fieldId ?? null;
-    } catch { /* Estimates remain unavailable if board configuration is restricted. */ }
+function observedStatuses(issues: JiraIssue[]): JiraStatus[] {
+  const statuses = issues.flatMap((issue) => [issue, ...(issue.fields.subtasks ?? [])]).map((issue) => issue.fields?.status).filter((status) => status?.name);
+  return [...new Map(statuses.map((status) => [status!.id ?? status!.name!, { id: status!.id ?? status!.name!, name: status!.name!, category: status!.statusCategory?.key ?? 'unknown' }])).values()];
+}
+async function changelog(base: string, key: string): Promise<JiraHistory[]> {
+  const histories: JiraHistory[] = [];
+  for (let startAt = 0; ; startAt += 100) {
+    const page = await jiraGet<{ values?: JiraHistory[]; total?: number }>(base, `/rest/api/3/issue/${encodeURIComponent(key)}/changelog`, { startAt: String(startAt), maxResults: '100' });
+    const batch = page.values ?? [];
+    histories.push(...batch);
+    if (!batch.length || histories.length >= (page.total ?? histories.length)) break;
   }
+  return histories;
+}
+async function liveData(withHistories: boolean): Promise<Data> {
+  const boardUrl = process.env.JIRA_BOARD_URL?.trim();
+  const base = requiredUrl(process.env.JIRA_URL?.trim() || (boardUrl ? new URL(boardUrl).origin : undefined));
+  const board = boardId();
+  const config = await jiraGet<{ estimation?: { field?: { fieldId?: string } }; columnConfig?: { columns?: Array<{ statuses?: Array<{ id: string }> }> } }>(base, `/rest/agile/1.0/board/${board}/configuration`).catch(() => ({ estimation: undefined, columnConfig: undefined }));
+  const pointsField = process.env.JIRA_STORY_POINTS_FIELD?.trim() || config.estimation?.field?.fieldId || null;
+  const boardStatusIds = new Set(config.columnConfig?.columns?.flatMap((column) => column.statuses?.map((status) => status.id) ?? []) ?? []);
+  const [sprints, allStatuses] = await Promise.all([
+    jiraGet<{ values?: JiraSprint[] }>(base, `/rest/agile/1.0/board/${board}/sprint`, { state: 'active', maxResults: '50' }),
+    jiraGet<Array<{ id: string; name: string; statusCategory?: { key?: string } }>>(base, '/rest/api/3/status').catch(() => []),
+  ]);
+  const sprint = sprints.values?.[0] ?? null;
   const issues: JiraIssue[] = [];
-  for (let startAt = 0; ; startAt += 50) {
-    const fields = ['summary', 'status', 'issuetype', 'assignee', 'subtasks', 'timetracking', 'timeoriginalestimate', 'timespent', 'updated', ...(pointsField ? [pointsField] : [])];
-    const page = await jiraGet<{ issues?: JiraIssue[]; total?: number }>(base, `/rest/agile/1.0/sprint/${sprint.id}/issue`, {
-      startAt: String(startAt), maxResults: '50', fields: fields.join(','),
-    });
+  if (sprint) for (let startAt = 0; ; startAt += 50) {
+    const fields = ['summary', 'status', 'issuetype', 'assignee', 'subtasks', 'timetracking', 'timeoriginalestimate', 'timespent', 'updated', 'created', ...(pointsField ? [pointsField] : [])];
+    const page = await jiraGet<{ issues?: JiraIssue[]; total?: number }>(base, `/rest/agile/1.0/sprint/${sprint.id}/issue`, { startAt: String(startAt), maxResults: '50', fields: fields.join(',') });
     const batch = page.issues ?? [];
     issues.push(...batch);
     if (batch.length < 50 || issues.length >= (page.total ?? issues.length)) break;
   }
-  return { base, board, sprint, issues, pointsField };
+  const statuses = [...new Map([
+    ...allStatuses.filter((status) => boardStatusIds.has(status.id)).map((status) => ({ id: status.id, name: status.name, category: status.statusCategory?.key ?? 'unknown' })),
+    ...observedStatuses(issues),
+  ].map((status) => [status.id, status])).values()];
+  const testName = (process.env.JIRA_TEST_TASK_NAME || 'Test the solution').trim().toLowerCase();
+  const keys = issues.flatMap((issue) => [issue.key, ...(issue.fields.subtasks ?? []).filter((item) => item.fields?.summary?.trim().toLowerCase() === testName).map((item) => item.key)]);
+  const histories: Data['histories'] = {};
+  for (let index = 0; withHistories && index < keys.length; index += 5) {
+    const results = await Promise.all(keys.slice(index, index + 5).map((key) => changelog(base, key).catch(() => null)));
+    keys.slice(index, index + 5).forEach((key, offset) => { histories[key] = results[offset]; });
+  }
+  const testTasks = issues.flatMap((issue) => (issue.fields.subtasks ?? []).filter((item) => item.fields?.summary?.trim().toLowerCase() === testName));
+  for (let index = 0; withHistories && index < testTasks.length; index += 5) {
+    const batch = testTasks.slice(index, index + 5);
+    const details = await Promise.all(batch.map((item) => jiraGet<{ fields: { created?: string } }>(base, `/rest/api/3/issue/${encodeURIComponent(item.key)}`, { fields: 'created' }).catch(() => null)));
+    batch.forEach((item, offset) => { item.fields.created = details[offset]?.fields.created; });
+  }
+  return { base, board, sprint, issues, pointsField, statuses, histories };
 }
-
-async function mockData(projectDirectory: string): Promise<{ base: string; board: number; sprint: JiraSprint | null; issues: JiraIssue[]; pointsField: string | null }> {
-  const folder = path.join(projectDirectory, 'mock', 'jira');
-  const [sprintRaw, issuesRaw] = await Promise.all([
-    readFile(path.join(folder, 'sprint.json'), 'utf8'),
-    readFile(path.join(folder, 'issues.json'), 'utf8'),
-  ]);
+async function mockData(root: string): Promise<Data> {
+  const folder = path.join(root, 'mock', 'jira');
+  const [sprintRaw, issuesRaw, statusesRaw, historiesRaw] = await Promise.all(['sprint.json', 'issues.json', 'statuses.json', 'changelogs.json'].map((file) => readFile(path.join(folder, file), 'utf8')));
   const sprint = JSON.parse(sprintRaw) as JiraSprint;
   const issues = JSON.parse(issuesRaw) as JiraIssue[];
   if (!Number.isInteger(sprint.id) || !Array.isArray(issues)) throw new Error('Invalid mock Jira data');
-  return { base: 'https://example.atlassian.net', board: 1, sprint, issues, pointsField: 'customfield_10016' };
+  return { base: 'https://example.atlassian.net', board: 1, sprint, issues, pointsField: 'customfield_10016', statuses: JSON.parse(statusesRaw), histories: JSON.parse(historiesRaw) };
 }
-
-function normalizeTicket(issue: JiraIssue, base: string, pointsField: string | null): SprintTicket {
+async function loadData(root: string, withHistories = true): Promise<Data> {
+  const mode = process.env.JIRA_MODE?.trim() || 'mock';
+  if (mode !== 'jira' && mode !== 'mock') throw new Error('JIRA_MODE must be mock or jira');
+  try { return mode === 'jira' ? await liveData(withHistories) : await mockData(root); }
+  catch (error) {
+    if (mode === 'mock' && (error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('Mock data is missing or outdated. Run npm run mock:seed');
+    throw error;
+  }
+}
+function scope(data: Data): string { return `${data.base}/board/${data.board}`; }
+export async function discoverStatusMapping(root: string): Promise<StatusMapping> {
+  const data = await loadData(root, false);
+  return getStatusMapping(root, scope(data), data.statuses);
+}
+export async function confirmStatusMapping(root: string, statuses: unknown): Promise<StatusMapping> {
+  const data = await loadData(root, false);
+  return saveStatusMapping(root, scope(data), data.statuses, statuses);
+}
+function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, now: number): SprintTicket {
   const fields = issue.fields;
   const subtasks = Array.isArray(fields.subtasks) ? fields.subtasks : [];
   const testName = (process.env.JIRA_TEST_TASK_NAME || 'Test the solution').trim().toLowerCase();
   const test = subtasks.find((item) => item.fields?.summary?.trim().toLowerCase() === testName);
-  const category = test?.fields.status?.statusCategory?.key?.toLowerCase();
-  const testing = !test ? 'none' : category === 'done' ? 'finished' : category === 'indeterminate' ? 'in_testing' : 'ready';
-  const rawPoints = pointsField ? fields[pointsField] : null;
+  const roleById = new Map(mapping.statuses.map((item) => [item.id, item.role]));
+  const roleByName = new Map(mapping.statuses.map((item) => [item.name, item.role]));
+  const roleFor = (name: string) => roleByName.get(name) ?? 'other';
+  const testRoleFor = (name: string) => {
+    const role = roleFor(name);
+    return role === 'in_progress' ? 'in_testing' : role;
+  };
+  const status = fields.status?.name || 'Unknown';
+  const statusRole = roleById.get(fields.status?.id ?? status) ?? roleFor(status);
+  const testStatus = test?.fields.status?.name || 'Unknown';
+  const mappedTestRole = test ? (roleById.get(test.fields.status?.id ?? testStatus) ?? roleFor(testStatus)) : 'other';
+  const testRole = mappedTestRole === 'in_progress' ? 'in_testing' : mappedTestRole;
+  const testing = !test ? 'none' : testRole === 'done' ? 'finished' : testRole === 'in_testing' ? 'in_testing' : 'ready';
+  const rawPoints = data.pointsField ? fields[data.pointsField] : null;
   const points = Number(rawPoints);
+  const issueHistory = data.histories[issue.key];
+  const statusEnteredAt = issueHistory ? enteredAt(status, fields.created, issueHistory) : null;
+  const testHistory = test ? data.histories[test.key] : null;
+  const testingAgeMs = test && testHistory && (testing === 'in_testing' || testing === 'finished') ? testingElapsed(test.fields.created, testHistory, testRoleFor, now) : null;
+  const testingWaitingAgeMs = test && testHistory && (testing === 'ready' || testingAgeMs != null) ? waitingForTestElapsed(test.fields.created, testHistory, testRoleFor, now) : null;
   return {
-    key: issue.key,
-    type: fields.issuetype?.name || 'Issue',
-    summary: fields.summary || issue.key,
-    status: fields.status?.name || 'Unknown',
-    statusCategory: fields.status?.statusCategory?.key || 'unknown',
-    assignee: fields.assignee?.displayName || null,
-    tester: test?.fields.assignee?.displayName || null,
-    testing,
-    testingTask: test ? { key: test.key, status: test.fields.status?.name || 'Unknown', url: `${base}/browse/${encodeURIComponent(test.key)}` } : null,
-    subtasks: subtasks.map((item) => ({ key: item.key, summary: item.fields?.summary || item.key, status: item.fields?.status?.name || 'Unknown', url: `${base}/browse/${encodeURIComponent(item.key)}` })),
+    key: issue.key, type: fields.issuetype?.name || 'Issue', summary: fields.summary || issue.key,
+    status, statusCategory: fields.status?.statusCategory?.key || 'unknown', statusRole, statusEnteredAt, statusAgeMs: elapsedSince(statusEnteredAt, now),
+    assignee: fields.assignee?.displayName || null, tester: test?.fields.assignee?.displayName || null, testing, testingAgeMs, testingWaitingAgeMs,
+    testingTask: test ? { key: test.key, status: testStatus, url: `${data.base}/browse/${encodeURIComponent(test.key)}` } : null,
+    subtasks: subtasks.map((item) => ({ key: item.key, summary: item.fields?.summary || item.key, status: item.fields?.status?.name || 'Unknown', url: `${data.base}/browse/${encodeURIComponent(item.key)}` })),
     storyPoints: rawPoints == null || !Number.isFinite(points) ? null : points,
     originalEstimateSeconds: fields.timetracking?.originalEstimateSeconds ?? fields.timeoriginalestimate ?? null,
     timeSpentSeconds: fields.timetracking?.timeSpentSeconds ?? fields.timespent ?? 0,
-    updatedAt: fields.updated || null,
-    url: `${base}/browse/${encodeURIComponent(issue.key)}`,
+    updatedAt: fields.updated || null, url: `${data.base}/browse/${encodeURIComponent(issue.key)}`,
   };
 }
-
-export async function getActiveSprint(projectDirectory: string): Promise<SprintSnapshot> {
-  const mode = process.env.JIRA_MODE?.trim() || 'mock';
-  if (mode !== 'jira' && mode !== 'mock') throw new Error('JIRA_MODE must be mock or jira');
-  const source = mode;
-  let data;
-  try {
-    data = source === 'jira' ? await liveData() : await mockData(projectDirectory);
-  } catch (error) {
-    if (source === 'mock' && (error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error('Mock data is missing. Run npm run mock:seed');
-    }
-    throw error;
-  }
+export async function getActiveSprint(root: string): Promise<SprintSnapshot> {
+  const data = await loadData(root);
+  const mapping = await getStatusMapping(root, scope(data), data.statuses);
+  const now = Date.now();
   return {
-    source,
-    fetchedAt: new Date().toISOString(),
+    source: process.env.JIRA_MODE?.trim() === 'jira' ? 'jira' : 'mock', fetchedAt: new Date(now).toISOString(), statusMappingConfirmed: mapping.confirmed,
     sprint: data.sprint ? { id: data.sprint.id, name: data.sprint.name, goal: data.sprint.goal || null, url: `${data.base}/secure/RapidBoard.jspa?rapidView=${data.board}` } : null,
-    tickets: data.issues.filter((issue) => issue.key && issue.fields && !issue.fields.issuetype?.subtask).map((issue) => normalizeTicket(issue, data.base, data.pointsField)),
+    tickets: data.issues.filter((issue) => issue.key && issue.fields && !issue.fields.issuetype?.subtask).map((issue) => normalizeTicket(issue, data, mapping, now)),
   };
 }

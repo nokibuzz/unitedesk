@@ -3,7 +3,7 @@ import path from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
-import { getActiveSprint } from './sprint/service.js';
+import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(currentDirectory, '../../..');
@@ -12,6 +12,7 @@ const envFile = path.join(projectDirectory, '.env');
 if (existsSync(envFile)) loadEnvFile(envFile);
 
 const app = express();
+app.use(express.json({ limit: '32kb' }));
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST?.trim() || '127.0.0.1';
 
@@ -32,6 +33,22 @@ app.get('/api/sprint/active', async (_request, response) => {
     console.error('Active sprint request failed:', error);
     response.status(503).json({ error: error instanceof Error ? error.message : 'Active sprint is unavailable' });
   }
+});
+
+app.get('/api/jira/status-mapping', async (_request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json(await discoverStatusMapping(projectDirectory)); }
+  catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Status discovery failed' }); }
+});
+
+app.put('/api/jira/status-mapping', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress ?? '')) {
+    response.status(403).json({ error: 'Status mapping can only be confirmed locally' });
+    return;
+  }
+  try { response.json(await confirmStatusMapping(projectDirectory, request.body?.statuses)); }
+  catch (error) { response.status(400).json({ error: error instanceof Error ? error.message : 'Invalid status mapping' }); }
 });
 
 app.use('/api', (_request, response) => {
