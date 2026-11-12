@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { decorateItems } from './model.js';
+import { getTeamSettings } from '../settings/team.js';
 import type { GitLabPerson, MergeRequest, ReviewSnapshot } from './types.js';
 
 interface GitLabMr {
@@ -52,7 +53,7 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
   }));
   return result;
 }
-async function liveSnapshot(): Promise<ReviewSnapshot> {
+async function liveSnapshot(staleAfterDays: number): Promise<ReviewSnapshot> {
   const { base, group, token } = settings();
   const viewer = person((await gitlabGet<{ username?: string; name?: string }>(base, token, '/api/v4/user')).body);
   if (viewer.username === 'unknown') throw new Error('GitLab did not return a current username');
@@ -93,33 +94,27 @@ async function liveSnapshot(): Promise<ReviewSnapshot> {
     };
   });
   const fetchedAt = new Date().toISOString();
-  const staleAfterDays = staleDays();
   return { source: 'gitlab', fetchedAt, group, viewer, staleAfterDays, items: decorateItems(items, viewer, staleAfterDays, Date.parse(fetchedAt)) };
 }
-function staleDays(): number {
-  const days = Number(process.env.GITLAB_STALE_DAYS ?? 2);
-  if (!Number.isFinite(days) || days <= 0 || days > 365) throw new Error('GITLAB_STALE_DAYS must be between 0 and 365');
-  return days;
-}
-async function mockSnapshot(root: string): Promise<ReviewSnapshot> {
+async function mockSnapshot(root: string, staleAfterDays: number): Promise<ReviewSnapshot> {
   let data: Omit<ReviewSnapshot, 'items'> & { items: MergeRequest[] };
   try { data = JSON.parse(await readFile(path.join(root, 'mock', 'gitlab', 'merge-requests.json'), 'utf8')) as typeof data; }
   catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('GitLab mock data is missing. Run npm run mock:seed'); throw error; }
   if (!Array.isArray(data.items) || !data.viewer?.username) throw new Error('Invalid GitLab mock data');
   const fetchedAt = new Date().toISOString();
-  const staleAfterDays = staleDays();
   return { ...data, source: 'mock', fetchedAt, staleAfterDays, items: decorateItems(data.items, data.viewer, staleAfterDays, Date.parse(fetchedAt)) };
 }
 let cache: { key: string; expires: number; promise: Promise<ReviewSnapshot> } | null = null;
 export async function getMergeRequests(root: string, refresh = false): Promise<ReviewSnapshot> {
   const mode = process.env.GITLAB_MODE?.trim() || 'mock';
   if (mode !== 'mock' && mode !== 'gitlab') throw new Error('GITLAB_MODE must be mock or gitlab');
-  if (mode === 'mock') return mockSnapshot(root);
-  const key = [process.env.GITLAB_URL, process.env.GITLAB_GROUP, process.env.GITLAB_TOKEN].join('|');
+  const { gitlabStaleDays } = await getTeamSettings(root);
+  if (mode === 'mock') return mockSnapshot(root, gitlabStaleDays);
+  const key = [process.env.GITLAB_URL, process.env.GITLAB_GROUP, process.env.GITLAB_TOKEN, gitlabStaleDays].join('|');
   const ttl = Number(process.env.GITLAB_CACHE_TTL_MS ?? 30_000);
   if (!Number.isInteger(ttl) || ttl < 0 || ttl > 3_600_000) throw new Error('GITLAB_CACHE_TTL_MS must be between 0 and 3600000');
   if (!refresh && cache?.key === key && Date.now() < cache.expires) return cache.promise;
-  const promise = liveSnapshot();
+  const promise = liveSnapshot(gitlabStaleDays);
   cache = { key, expires: Date.now() + ttl, promise };
   try { return await promise; }
   catch (error) { if (cache?.promise === promise) cache = null; throw error; }

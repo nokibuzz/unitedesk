@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { getMergeRequests } from './merge-requests/service.js';
 import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
+import { getTeamSettings, saveTeamSettings } from './settings/team.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(currentDirectory, '../../..');
@@ -49,6 +50,22 @@ app.get('/api/jira/status-mapping', async (_request, response) => {
   response.set('Cache-Control', 'no-store');
   try { response.json(await discoverStatusMapping(projectDirectory)); }
   catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Status discovery failed' }); }
+});
+
+app.get('/api/settings/team', async (_request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json({ settings: await getTeamSettings(projectDirectory) }); }
+  catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Team settings are unavailable' }); }
+});
+
+app.put('/api/settings/team', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress ?? '')) {
+    response.status(403).json({ error: 'Team settings can only be changed locally' });
+    return;
+  }
+  try { response.json({ settings: await saveTeamSettings(projectDirectory, request.body?.settings) }); }
+  catch (error) { response.status(400).json({ error: error instanceof Error ? error.message : 'Invalid team settings' }); }
 });
 
 app.put('/api/jira/status-mapping', async (request, response) => {

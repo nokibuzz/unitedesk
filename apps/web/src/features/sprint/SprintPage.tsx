@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import DailyMode from './DailyMode';
-import type { Mapping, Role, Snapshot, Ticket } from './types';
+import type { Snapshot, Ticket } from './types';
 import './sprint.css';
 
 type Tab = 'overview' | 'development' | 'testing';
-const roleLabels: Record<Role, string> = {
-  backlog: 'Backlog', in_progress: 'In development', ready_for_testing: 'Ready for testing',
-  in_testing: 'In testing', done: 'Done', blocked: 'Blocked', other: 'Other',
-};
 const testingLabel: Record<Ticket['testing'], string> = {
   none: 'No test task', ready: 'Waiting for test', in_testing: 'In testing', finished: 'Test finished',
 };
@@ -28,11 +24,8 @@ function TicketSummary({ item }: { item: Ticket }) {
 
 export default function SprintPage() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [mapping, setMapping] = useState<Mapping | null>(null);
   const [error, setError] = useState('');
-  const [mappingError, setMappingError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
   const [dailyOpen, setDailyOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -40,31 +33,15 @@ export default function SprintPage() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    Promise.all([
-      fetch('/api/sprint/active', { signal: controller.signal }),
-      fetch('/api/jira/status-mapping', { signal: controller.signal }),
-    ]).then(async ([sprintResponse, mappingResponse]) => {
-      const [sprint, statusMapping] = await Promise.all([sprintResponse.json(), mappingResponse.json()]);
-      if (!sprintResponse.ok) throw new Error(sprint.error || 'Could not load the active sprint');
-      if (!mappingResponse.ok) throw new Error(statusMapping.error || 'Could not discover Jira statuses');
-      return { sprint: sprint as Snapshot, statusMapping: statusMapping as Mapping };
-    }).then(({ sprint, statusMapping }) => { setSnapshot(sprint); setMapping(statusMapping); setError(''); })
+    fetch('/api/sprint/active', { signal: controller.signal }).then(async (response) => {
+      const sprint = await response.json() as Snapshot & { error?: string };
+      if (!response.ok) throw new Error(sprint.error || 'Could not load the active sprint');
+      return sprint;
+    }).then((sprint) => { setSnapshot(sprint); setError(''); })
       .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load the sprint'); })
       .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [refresh]);
-
-  async function confirmMapping() {
-    if (!mapping) return;
-    setSaving(true); setMappingError('');
-    try {
-      const response = await fetch('/api/jira/status-mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statuses: mapping.statuses.map(({ id, role }) => ({ id, role })) }) });
-      const body = await response.json() as Mapping & { error?: string };
-      if (!response.ok) throw new Error(body.error || 'Could not confirm status mapping');
-      setMapping(body); setRefresh((value) => value + 1);
-    } catch (reason) { setMappingError(reason instanceof Error ? reason.message : 'Could not confirm status mapping'); }
-    finally { setSaving(false); }
-  }
 
   const tickets = snapshot?.tickets ?? [];
   const development = tickets.filter((item) => item.statusRole === 'in_progress' || item.statusRole === 'blocked');
@@ -86,13 +63,7 @@ export default function SprintPage() {
     {snapshot ? <>
       <div className="sprint-context"><div><span className="context-label">Current sprint</span><strong>{snapshot.sprint?.name ?? 'No active sprint'}</strong>{snapshot.sprint?.goal ? <span className="sprint-goal">{snapshot.sprint.goal}</span> : null}</div>
         <div className="context-meta"><span className="source-badge">{mock ? 'Mock data' : 'Live Jira'}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>{!mock && snapshot.sprint ? <a href={snapshot.sprint.url} target="_blank" rel="noreferrer">Open board ↗</a> : null}</div></div>
-      <details className="mapping-panel" open={!mapping?.confirmed}>
-        <summary>Status mapping <span className="source-badge">{mapping?.confirmed ? 'Confirmed' : 'Review suggested roles'}</span></summary>
-        <p>Roles are suggested from Jira board statuses. Review each role and confirm it for this local workspace. New board statuses will require another confirmation.</p>
-        <div className="mapping-grid">{mapping?.statuses.map((status) => <label key={status.id}><span>{status.name}<small>{status.category}</small></span><select value={status.role} onChange={(event) => setMapping((current) => current ? { ...current, confirmed: false, statuses: current.statuses.map((item) => item.id === status.id ? { ...item, role: event.target.value as Role } : item) } : null)}>{Object.entries(roleLabels).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>)}</div>
-        {mappingError ? <div className="sprint-alert" role="alert">{mappingError}</div> : null}
-        <button className="refresh-button" type="button" onClick={confirmMapping} disabled={saving || !mapping?.statuses.length}>{saving ? 'Saving…' : 'Confirm mapping'}</button>
-      </details>
+      {!snapshot.statusMappingConfirmed ? <div className="sprint-alert" role="status">Jira status roles are suggestions. <a href="#/settings">Review mapping in Settings ↗</a></div> : null}
       <div className="sprint-stats" aria-label="Sprint ticket counts">{tabs.map((item) => <div className="stat-card" key={item.id}><span>{item.name}</span><strong>{item.count}</strong></div>)}</div>
       <div className="sprint-tabs" role="tablist" aria-label="Active sprint views">{tabs.map((item) => <button key={item.id} id={`tab-${item.id}`} type="button" role="tab" aria-selected={tab === item.id} aria-controls="sprint-tabpanel" className={tab === item.id ? 'sprint-tab active' : 'sprint-tab'} onClick={() => setTab(item.id)}>{item.name} <span>{item.count}</span></button>)}</div>
       <div id="sprint-tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`}>

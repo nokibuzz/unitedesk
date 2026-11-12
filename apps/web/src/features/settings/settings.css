@@ -1,0 +1,36 @@
+.settings-page { max-width: 940px; margin-inline: auto; }
+.settings-page .sprint-title { margin: 18px 0 8px; }
+.settings-tabs { display: flex; gap: 6px; margin: 35px 0 23px; border-bottom: 1px solid var(--border); }
+.settings-tabs button { min-width: 115px; padding: 13px 18px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--text-muted); cursor: pointer; font-weight: 650; }
+.settings-tabs button:hover, .settings-tabs button.active { color: var(--text); }
+.settings-tabs button.active { border-bottom-color: var(--text); }
+.settings-stack { display: grid; gap: 16px; }
+.settings-card { padding: 26px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.settings-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 22px; }
+.settings-card-heading h2 { margin: 0 0 6px; font-size: 20px; }
+.settings-card-heading p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.settings-scope { flex: none; padding: 5px 8px; border: 1px solid var(--border); border-radius: 99px; color: var(--text-muted); font-size: 11px; }
+.settings-field { display: grid; gap: 10px; }
+.settings-label, .settings-input > span { color: var(--text); font-size: 13px; font-weight: 650; }
+.settings-choice-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.settings-choice-group button { padding: 10px 18px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--page); color: var(--text); cursor: pointer; }
+.settings-choice-group button:hover, .settings-choice-group button.selected { background: var(--surface-raised); border-color: var(--text); }
+.settings-choice-group button.selected { font-weight: 750; }
+.settings-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.settings-input { display: grid; align-content: start; gap: 7px; min-width: 0; }
+.settings-input.settings-full { grid-column: 1 / -1; }
+.settings-input input, .settings-mapping-list select { width: 100%; height: 41px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--page); color: var(--text); font: inherit; font-size: 13px; }
+.settings-input input:focus-visible, .settings-mapping-list select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.settings-input small { color: var(--text-muted); font-size: 11px; line-height: 1.4; }
+.settings-save { margin-top: 22px; padding: 11px 17px; border: 1px solid var(--text); border-radius: 9px; background: var(--text); color: var(--page); cursor: pointer; font-weight: 700; }
+.settings-save:hover:not(:disabled) { opacity: .85; }
+.settings-save:disabled { opacity: .5; cursor: default; }
+.settings-success { margin: 0 0 17px; color: var(--text); font-size: 13px; }
+.settings-mapping-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; color: var(--text-muted); font-size: 12px; }
+.settings-mapping-list { display: grid; gap: 8px; }
+.settings-mapping-list label { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 15px; border: 1px solid var(--border); border-radius: 9px; }
+.settings-mapping-list label > span { min-width: 0; }
+.settings-mapping-list strong { display: block; overflow-wrap: anywhere; font-size: 13px; }
+.settings-mapping-list small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; }
+.settings-mapping-list select { width: min(100%, 190px); flex: none; }
+@media (max-width: 650px) { .settings-card { padding: 19px; } .settings-field-grid { grid-template-columns: 1fr; } .settings-input.settings-full { grid-column: auto; } .settings-mapping-list label { align-items: stretch; flex-direction: column; } .settings-mapping-list select { width: 100%; } }

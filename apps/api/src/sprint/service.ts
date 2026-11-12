@@ -3,6 +3,7 @@ import path from 'node:path';
 import { addedToSprintAt, dailyWindowStart, descriptionFromJira } from './daily.js';
 import { elapsedSince, enteredAt, testingElapsed, waitingForTestElapsed } from './history.js';
 import { getStatusMapping, saveStatusMapping } from './mapping.js';
+import { getTeamSettings } from '../settings/team.js';
 import type { JiraHistory, JiraIssue, JiraSprint, JiraStatus, SprintSnapshot, SprintTicket, StatusMapping } from './types.js';
 
 type Data = { base: string; board: number; sprint: JiraSprint | null; issues: JiraIssue[]; pointsField: string | null; statuses: JiraStatus[]; histories: Record<string, JiraHistory[] | null> };
@@ -46,7 +47,7 @@ async function changelog(base: string, key: string): Promise<JiraHistory[]> {
   }
   return histories;
 }
-async function liveData(withHistories: boolean): Promise<Data> {
+async function liveData(withHistories: boolean, testTaskName: string): Promise<Data> {
   const boardUrl = process.env.JIRA_BOARD_URL?.trim();
   const base = requiredUrl(process.env.JIRA_URL?.trim() || (boardUrl ? new URL(boardUrl).origin : undefined));
   const board = boardId();
@@ -70,7 +71,7 @@ async function liveData(withHistories: boolean): Promise<Data> {
     ...allStatuses.filter((status) => boardStatusIds.has(status.id)).map((status) => ({ id: status.id, name: status.name, category: status.statusCategory?.key ?? 'unknown' })),
     ...observedStatuses(issues),
   ].map((status) => [status.id, status])).values()];
-  const testName = (process.env.JIRA_TEST_TASK_NAME || 'Test the solution').trim().toLowerCase();
+  const testName = testTaskName.toLowerCase();
   const keys = issues.flatMap((issue) => [issue.key, ...(issue.fields.subtasks ?? []).filter((item) => item.fields?.summary?.trim().toLowerCase() === testName).map((item) => item.key)]);
   const histories: Data['histories'] = {};
   for (let index = 0; withHistories && index < keys.length; index += 5) {
@@ -93,10 +94,10 @@ async function mockData(root: string): Promise<Data> {
   if (!Number.isInteger(sprint.id) || !Array.isArray(issues)) throw new Error('Invalid mock Jira data');
   return { base: 'https://example.atlassian.net', board: 1, sprint, issues, pointsField: 'customfield_10016', statuses: JSON.parse(statusesRaw), histories: JSON.parse(historiesRaw) };
 }
-async function loadData(root: string, withHistories = true): Promise<Data> {
+async function loadData(root: string, testTaskName: string, withHistories = true): Promise<Data> {
   const mode = process.env.JIRA_MODE?.trim() || 'mock';
   if (mode !== 'jira' && mode !== 'mock') throw new Error('JIRA_MODE must be mock or jira');
-  try { return mode === 'jira' ? await liveData(withHistories) : await mockData(root); }
+  try { return mode === 'jira' ? await liveData(withHistories, testTaskName) : await mockData(root); }
   catch (error) {
     if (mode === 'mock' && (error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('Mock data is missing or outdated. Run npm run mock:seed');
     throw error;
@@ -104,17 +105,19 @@ async function loadData(root: string, withHistories = true): Promise<Data> {
 }
 function scope(data: Data): string { return `${data.base}/board/${data.board}`; }
 export async function discoverStatusMapping(root: string): Promise<StatusMapping> {
-  const data = await loadData(root, false);
+  const settings = await getTeamSettings(root);
+  const data = await loadData(root, settings.jiraTestTaskName, false);
   return getStatusMapping(root, scope(data), data.statuses);
 }
 export async function confirmStatusMapping(root: string, statuses: unknown): Promise<StatusMapping> {
-  const data = await loadData(root, false);
+  const settings = await getTeamSettings(root);
+  const data = await loadData(root, settings.jiraTestTaskName, false);
   return saveStatusMapping(root, scope(data), data.statuses, statuses);
 }
-function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, now: number): SprintTicket {
+function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, now: number, testTaskName: string): SprintTicket {
   const fields = issue.fields;
   const subtasks = Array.isArray(fields.subtasks) ? fields.subtasks : [];
-  const testName = (process.env.JIRA_TEST_TASK_NAME || 'Test the solution').trim().toLowerCase();
+  const testName = testTaskName.toLowerCase();
   const test = subtasks.find((item) => item.fields?.summary?.trim().toLowerCase() === testName);
   const roleById = new Map(mapping.statuses.map((item) => [item.id, item.role]));
   const roleByName = new Map(mapping.statuses.map((item) => [item.name, item.role]));
@@ -155,20 +158,17 @@ function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, n
   };
 }
 export async function getActiveSprint(root: string): Promise<SprintSnapshot> {
-  const data = await loadData(root);
+  const settings = await getTeamSettings(root);
+  const data = await loadData(root, settings.jiraTestTaskName);
   const mapping = await getStatusMapping(root, scope(data), data.statuses);
   const now = Date.now();
-  const timeZone = process.env.DAILY_TIME_ZONE?.trim() || 'UTC';
-  const cutoffHour = Number(process.env.DAILY_CUTOFF_HOUR ?? 10);
-  const ticketSeconds = Number(process.env.DAILY_TICKET_SECONDS ?? 180);
-  if (!Number.isInteger(cutoffHour) || cutoffHour < 0 || cutoffHour > 23) throw new Error('DAILY_CUTOFF_HOUR must be between 0 and 23');
-  if (!Number.isInteger(ticketSeconds) || ticketSeconds < 15 || ticketSeconds > 900) throw new Error('DAILY_TICKET_SECONDS must be between 15 and 900');
-  try { new Intl.DateTimeFormat('en-US', { timeZone }); }
-  catch { throw new Error('DAILY_TIME_ZONE must be a valid IANA time zone'); }
+  const timeZone = settings.dailyTimeZone;
+  const cutoffHour = settings.dailyCutoffHour;
+  const ticketSeconds = settings.dailyTicketSeconds;
   return {
     source: process.env.JIRA_MODE?.trim() === 'jira' ? 'jira' : 'mock', fetchedAt: new Date(now).toISOString(), statusMappingConfirmed: mapping.confirmed,
     daily: { timeZone, windowStart: dailyWindowStart(now, timeZone, cutoffHour), ticketSeconds },
     sprint: data.sprint ? { id: data.sprint.id, name: data.sprint.name, goal: data.sprint.goal || null, url: `${data.base}/secure/RapidBoard.jspa?rapidView=${data.board}` } : null,
-    tickets: data.issues.filter((issue) => issue.key && issue.fields && !issue.fields.issuetype?.subtask).map((issue) => normalizeTicket(issue, data, mapping, now)),
+    tickets: data.issues.filter((issue) => issue.key && issue.fields && !issue.fields.issuetype?.subtask).map((issue) => normalizeTicket(issue, data, mapping, now, settings.jiraTestTaskName)),
   };
 }

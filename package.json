@@ -22,6 +22,7 @@
     "test:history": "node --import tsx --test apps/api/src/sprint/history.test.ts",
     "test:daily": "node --import tsx --test apps/api/src/sprint/daily.test.ts",
     "test:reviews": "node --import tsx --test apps/api/src/merge-requests/service.test.ts apps/web/tests/review-filter.test.ts",
-    "test": "npm run test:history && npm run test:daily && npm run test:reviews"
+    "test:settings": "node --import tsx --test apps/api/src/settings/team.test.ts",
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings"
   }
 }
