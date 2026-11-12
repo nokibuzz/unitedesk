@@ -3,6 +3,7 @@ import path from 'node:path';
 import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
+import { getMergeRequests } from './merge-requests/service.js';
 import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -32,6 +33,15 @@ app.get('/api/sprint/active', async (_request, response) => {
   } catch (error) {
     console.error('Active sprint request failed:', error);
     response.status(503).json({ error: error instanceof Error ? error.message : 'Active sprint is unavailable' });
+  }
+});
+
+app.get('/api/merge-requests', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json(await getMergeRequests(projectDirectory, request.query.refresh === '1')); }
+  catch (error) {
+    console.error('Merge request list failed:', error);
+    response.status(503).json({ error: error instanceof Error ? error.message : 'Merge requests are unavailable' });
   }
 });
 

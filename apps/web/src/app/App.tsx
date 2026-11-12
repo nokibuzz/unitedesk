@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { useTheme } from './useTheme';
 import SprintPage from '../features/sprint/SprintPage';
+import ReviewQueuePage from '../features/reviews/ReviewQueuePage';
 
 function ThemeIcon({ theme }: { theme: 'light' | 'dark' }) {
   return theme === 'dark' ? (
@@ -16,15 +18,22 @@ function ThemeIcon({ theme }: { theme: 'light' | 'dark' }) {
 
 export default function App() {
   const { theme, toggleTheme } = useTheme();
+  const [section, setSection] = useState<'sprint' | 'reviews'>(() => window.location.hash === '#/reviews' ? 'reviews' : 'sprint');
+  useEffect(() => {
+    const onHashChange = () => setSection(window.location.hash === '#/reviews' ? 'reviews' : 'sprint');
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   return (
     <div className="app-shell">
       <header className="site-header">
         <div className="header-content">
-          <a className="brand" href="/" aria-label="UniteDesk home">
+          <a className="brand" href="#/sprint" aria-label="UniteDesk home">
             <span className="brand-mark" aria-hidden="true"><span /><span /><span /></span>
             <span>UniteDesk</span>
           </a>
+          <nav className="site-nav" aria-label="Main navigation"><a href="#/sprint" aria-current={section === 'sprint' ? 'page' : undefined}>Sprint</a><a href="#/reviews" aria-current={section === 'reviews' ? 'page' : undefined}>Review Queue</a></nav>
           <button
             className="theme-toggle"
             type="button"
@@ -38,7 +47,7 @@ export default function App() {
       </header>
 
       <main className="main-content sprint-main">
-        <SprintPage />
+        {section === 'sprint' ? <SprintPage /> : <ReviewQueuePage />}
       </main>
 
       <footer className="site-footer"><span>UniteDesk</span><span>Built for teams, together.</span></footer>

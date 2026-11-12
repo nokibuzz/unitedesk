@@ -4,9 +4,9 @@ One place for your team's work. The app has light and dark themes, a small API, 
 
 ## Project direction
 
-UniteDesk is an open source workspace for teams that use several tools to manage work. The planned integrations include Jira, Notion and Linear for work items; GitLab and GitHub for code; Confluence for documentation; and Teams and Slack for notifications. The application will keep links to original records and expose only the actions supported by each connected tool.
+UniteDesk is an open source workspace for teams that use several tools to manage work. Read-only Jira and GitLab views are available now. Planned integrations include Notion and Linear for work items, GitHub for code, Confluence for documentation, and Teams and Slack for notifications. The application keeps links to original records and exposes only the actions supported by each connected tool.
 
-The current version includes a read-only active sprint view with Overview, Development, and Testing views, plus a daily presentation mode. It can use local mock data or a Jira Cloud board. Jira actions and user authentication are not implemented yet.
+The current version includes a read-only active sprint view with Overview, Development, and Testing views, a daily presentation mode, and a GitLab Review Queue. Both integrations can use local mock data. Jira actions and user authentication are not implemented yet.
 
 ## Requirements
 
@@ -28,6 +28,8 @@ To change the API port, copy `.env.example` to `.env` and edit `PORT`; the devel
 
 `npm run mock:seed` creates `mock/jira/sprint.json`, `issues.json`, `statuses.json`, and `changelogs.json`. Edit these objects to try different sprint names, statuses, assignments, estimates, test subtasks, and status histories. The `mock/` directory is ignored by Git and is never included in the repository. Run the seed command again to reset the sample data.
 
+The same command creates `mock/gitlab/merge-requests.json` with a sample viewer and open merge requests. Edit the JSON to try reviewer assignments, approval states, pipelines, branches, and projects. Use `npm run mock:seed:jira` or `npm run mock:seed:gitlab` to reset only one integration's sample data.
+
 ### Read from Jira locally
 
 Copy `.env.example` to `.env`, then set `JIRA_MODE=jira`, `JIRA_BOARD_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`. A full Jira board URL supplies both the site address and board ID; `JIRA_URL` and `JIRA_BOARD_ID` are optional overrides. The app reads board statuses, the active sprint, issues, and status changelogs. Leave `HOST=127.0.0.1` while authentication is absent.
@@ -39,6 +41,12 @@ The Status mapping panel discovers the board's statuses and proposes roles. Revi
 Select **Start daily** above the sprint. Daily mode presents tickets one at a time with their description, owner, status, testing task, subtickets, linked Jira issues, points, logged time, and estimate. Use the arrow keys, Previous/Next buttons, or ticket rail to navigate. The timer resets for each ticket. **Hide done** removes tickets mapped to the `done` role. The final recap lists tickets completed or added to the sprint, and subtickets created, since the previous daily window.
 
 Set `DAILY_TIME_ZONE` to your team's IANA time zone and `DAILY_CUTOFF_HOUR` to the meeting hour; defaults are `UTC` and `10`. `DAILY_TICKET_SECONDS` defaults to `180`. Recap additions require Jira sprint changelog data. If Jira does not expose that transition, the ticket is omitted from the “added” recap rather than being guessed from its creation date.
+
+### Review Queue from GitLab
+
+Open **Review Queue** in the header. It shows open merge requests for one GitLab group and its subgroups, with project, branches, author, reviewers, pipeline, approval state, and age. The quick views show all open requests, your requests, requests waiting for your review, and aging requests. Search and filters can be combined by author, reviewer, project, target branch, pipeline, and approval state.
+
+For live data, set `GITLAB_MODE=gitlab`, `GITLAB_URL`, `GITLAB_GROUP` (full group path), and `GITLAB_TOKEN` in your private `.env`. The token is used by the server and is not sent to the browser. Use a personal token when **My merge requests** and **For my review** should reflect your account. The latter includes a request when GitLab reports it as unapproved and the viewer is an assigned reviewer or an eligible approver for a required approval. Approval and pipeline fields show an unavailable state if GitLab does not return them. `GITLAB_STALE_DAYS` sets the calendar-day aging threshold; `GITLAB_CACHE_TTL_MS` sets the live read cache duration. Keep `HOST=127.0.0.1` while the app has no authentication.
 
 ## Build and run
 

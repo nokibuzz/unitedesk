@@ -16,8 +16,12 @@
     "build": "npm run build --workspace @unitedesk/web && npm run build --workspace @unitedesk/api",
     "typecheck": "npm run typecheck --workspace @unitedesk/web && npm run typecheck --workspace @unitedesk/api",
     "start": "npm run start --workspace @unitedesk/api",
-    "mock:seed": "node scripts/seed-mock.mjs",
+    "mock:seed": "npm run mock:seed:jira && npm run mock:seed:gitlab",
+    "mock:seed:jira": "node scripts/seed-mock.mjs",
+    "mock:seed:gitlab": "node scripts/seed-gitlab-mock.mjs",
     "test:history": "node --import tsx --test apps/api/src/sprint/history.test.ts",
-    "test:daily": "node --import tsx --test apps/api/src/sprint/daily.test.ts"
+    "test:daily": "node --import tsx --test apps/api/src/sprint/daily.test.ts",
+    "test:reviews": "node --import tsx --test apps/api/src/merge-requests/service.test.ts apps/web/tests/review-filter.test.ts",
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews"
   }
 }

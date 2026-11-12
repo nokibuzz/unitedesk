@@ -1,0 +1,51 @@
+.reviews-page { min-width: 0; }
+.review-context { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-top: 38px; padding: 22px 26px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.review-context > div:first-child { display: grid; gap: 6px; }
+.review-context strong { font-size: 19px; }
+.review-views { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.review-view { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 78px; padding: 17px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; }
+.review-view:hover, .review-view.active { border-color: var(--border-strong); background: var(--surface-raised); }
+.review-view.active { box-shadow: inset 0 0 0 1px var(--border-strong); }
+.review-view span { color: var(--text-muted); font-size: 12px; font-weight: 600; }
+.review-view strong { font-size: 25px; letter-spacing: -.05em; }
+.review-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 24px; padding: 19px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.review-filters label { display: grid; gap: 7px; min-width: 0; }
+.review-filters label > span { color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.review-filters .review-search { grid-column: span 2; }
+.review-filters input, .review-filters select { width: 100%; min-width: 0; height: 39px; padding: 0 11px; border: 1px solid var(--border-strong); border-radius: 8px; outline: none; background: var(--page); color: var(--text); font: inherit; font-size: 13px; }
+.review-filters input:focus, .review-filters select:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+.review-filters input::placeholder { color: var(--text-muted); }
+.review-clear { align-self: end; min-height: 39px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; }
+.review-clear:hover { background: var(--surface-raised); }
+.review-list { display: grid; gap: 10px; }
+.review-card { display: grid; grid-template-columns: minmax(0, 2.1fr) minmax(125px, .85fr) minmax(155px, 1fr) 88px; align-items: start; gap: 20px; padding: 22px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); }
+.review-card:hover { border-color: var(--border-strong); }
+.review-card-main { min-width: 0; }
+.review-card-overline { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-bottom: 7px; color: var(--text-muted); font-size: 11px; font-weight: 700; }
+.review-card h2 { margin: 0 0 11px; font-size: 17px; line-height: 1.35; letter-spacing: -.025em; overflow-wrap: anywhere; }
+.review-card h2 a { color: var(--text); text-decoration: none; }
+.review-card h2 a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.review-branches { display: flex; align-items: center; gap: 7px; min-width: 0; margin: 0; color: var(--text-muted); font-size: 11px; }
+.review-branches code { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.review-card-people, .review-card-status, .review-card-age { display: grid; justify-items: start; gap: 5px; min-width: 0; font-size: 12px; }
+.review-card-people > span:not(.review-meta-label) { overflow: hidden; max-width: 100%; text-overflow: ellipsis; white-space: nowrap; }
+.review-card-people strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.review-card-status > div { display: grid; justify-items: start; gap: 5px; }
+.review-card-status > div + div { margin-top: 5px; }
+.review-card-status small { color: var(--text-muted); line-height: 1.35; }
+.review-meta-label { color: var(--text-muted); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.review-card-age strong { font-size: 18px; white-space: nowrap; }
+.review-badge { display: inline-block; max-width: 100%; padding: 4px 8px; border: 1px solid var(--border-strong); border-radius: 7px; color: var(--text); font-size: 11px; font-weight: 700; line-height: 1.35; text-transform: capitalize; }
+.review-badge[data-tone="success"] { border-color: #3d8a62; color: #358159; }
+.review-badge[data-tone="danger"] { border-color: #c84c4c; color: #c84c4c; }
+.review-badge[data-tone="active"] { border-color: #5688c6; color: #5688c6; }
+.review-badge[data-tone="pending"] { border-color: #b88a36; color: #a97820; }
+:root[data-theme='dark'] .review-badge[data-tone="success"] { color: #7aca9d; }
+:root[data-theme='dark'] .review-badge[data-tone="danger"] { color: #ec8b8b; }
+:root[data-theme='dark'] .review-badge[data-tone="active"] { color: #8db9ee; }
+:root[data-theme='dark'] .review-badge[data-tone="pending"] { color: #e5b96b; }
+.review-pagination { display: flex; justify-content: center; align-items: center; gap: 14px; margin-top: 25px; color: var(--text-muted); font-size: 12px; }
+.review-pagination button { padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--text); cursor: pointer; }
+.review-pagination button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 950px) { .review-views { grid-template-columns: repeat(2, minmax(0, 1fr)); } .review-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .review-card { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); } .review-card-age { justify-items: start; } }
+@media (max-width: 640px) { .review-context { align-items: flex-start; flex-direction: column; } .review-views { gap: 8px; } .review-view { min-height: 70px; padding: 12px; } .review-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 13px; } .review-filters .review-search { grid-column: span 2; } .review-clear { grid-column: span 2; } .review-card { grid-template-columns: minmax(0, 1fr); gap: 16px; padding: 18px; } .review-card-people { grid-template-columns: 70px 1fr; align-items: baseline; } .review-card-status { grid-template-columns: repeat(2, minmax(0, 1fr)); } .review-card-status small { grid-column: 1 / -1; } .review-card-age { display: flex; align-items: center; gap: 10px; } }
