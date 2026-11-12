@@ -1,4 +1,5 @@
 import { useTheme } from './useTheme';
+import SprintPage from '../features/sprint/SprintPage';
 
 function ThemeIcon({ theme }: { theme: 'light' | 'dark' }) {
   return theme === 'dark' ? (
@@ -36,24 +37,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="main-content">
-        <div className="eyebrow"><span className="eyebrow-dot" /> The foundation is ready</div>
-        <h1>One place for your<br /><em>team's work.</em></h1>
-        <p className="intro">UniteDesk will bring tickets, code, documentation and team tools into a clear shared view.</p>
-
-        <section className="foundation-card" aria-labelledby="foundation-title">
-          <div className="card-symbol" aria-hidden="true">
-            <span className="symbol-line symbol-line-one" />
-            <span className="symbol-line symbol-line-two" />
-            <span className="symbol-line symbol-line-three" />
-          </div>
-          <div>
-            <p className="card-kicker">Workspace</p>
-            <h2 id="foundation-title">A clean starting point</h2>
-            <p>The app structure and themes are in place. Integrations will appear here as they are built.</p>
-          </div>
-          <span className="card-index" aria-hidden="true">01 / 01</span>
-        </section>
+      <main className="main-content sprint-main">
+        <SprintPage />
       </main>
 
       <footer className="site-footer"><span>UniteDesk</span><span>Built for teams, together.</span></footer>
