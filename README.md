@@ -6,7 +6,7 @@ One place for your team's work. The app has light and dark themes, a small API, 
 
 UniteDesk is an open source workspace for teams that use several tools to manage work. The planned integrations include Jira, Notion and Linear for work items; GitLab and GitHub for code; Confluence for documentation; and Teams and Slack for notifications. The application will keep links to original records and expose only the actions supported by each connected tool.
 
-The current version includes a read-only active sprint view with Overview, Development, and Testing views. It can use local mock data or a Jira Cloud board. Jira actions and user authentication are not implemented yet.
+The current version includes a read-only active sprint view with Overview, Development, and Testing views, plus a daily presentation mode. It can use local mock data or a Jira Cloud board. Jira actions and user authentication are not implemented yet.
 
 ## Requirements
 
@@ -33,6 +33,12 @@ To change the API port, copy `.env.example` to `.env` and edit `PORT`; the devel
 Copy `.env.example` to `.env`, then set `JIRA_MODE=jira`, `JIRA_BOARD_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`. A full Jira board URL supplies both the site address and board ID; `JIRA_URL` and `JIRA_BOARD_ID` are optional overrides. The app reads board statuses, the active sprint, issues, and status changelogs. Leave `HOST=127.0.0.1` while authentication is absent.
 
 The Status mapping panel discovers the board's statuses and proposes roles. Review and confirm them before relying on the Development and Testing views. Confirmation is stored in the local `data/jira-status-mapping.json`, which is ignored by Git. If Jira adds a status, confirmation is requested again. The status age columns use elapsed calendar time from Jira changelog transitions, including nights and weekends. A dash means the transition time could not be verified. Test task waiting time starts at task creation and stops when testing begins; testing time sums the intervals spent in testing. Missing changelog permissions may leave those columns empty.
+
+### Daily mode
+
+Select **Start daily** above the sprint. Daily mode presents tickets one at a time with their description, owner, status, testing task, subtickets, linked Jira issues, points, logged time, and estimate. Use the arrow keys, Previous/Next buttons, or ticket rail to navigate. The timer resets for each ticket. **Hide done** removes tickets mapped to the `done` role. The final recap lists tickets completed or added to the sprint, and subtickets created, since the previous daily window.
+
+Set `DAILY_TIME_ZONE` to your team's IANA time zone and `DAILY_CUTOFF_HOUR` to the meeting hour; defaults are `UTC` and `10`. `DAILY_TICKET_SECONDS` defaults to `180`. Recap additions require Jira sprint changelog data. If Jira does not expose that transition, the ticket is omitted from the “added” recap rather than being guessed from its creation date.
 
 ## Build and run
 

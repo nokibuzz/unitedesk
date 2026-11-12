@@ -1,0 +1,58 @@
+.sprint-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.daily-launch { background: var(--text); color: var(--page); border-color: var(--text); font-weight: 700; }
+.daily-launch:hover:not(:disabled) { background: var(--text); opacity: .86; }
+.daily-backdrop { position: fixed; inset: 0; z-index: 100; background: var(--page); }
+.daily-dialog { display: flex; flex-direction: column; width: 100%; height: 100dvh; color: var(--text); background: var(--page); }
+.daily-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding: 25px clamp(20px, 3vw, 52px) 20px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.daily-header h1 { margin: 7px 0 6px; font-size: clamp(24px, 3vw, 38px); letter-spacing: -.055em; }
+.daily-header p { margin: 0; color: var(--text-muted); font-size: 14px; }
+.daily-header .daily-mapping-note { margin-top: 8px; font-size: 12px; }
+.daily-kicker { color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.daily-header-actions { display: flex; align-items: center; gap: 22px; }
+.daily-header-actions label { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 13px; cursor: pointer; }
+.daily-header-actions input { accent-color: var(--text); }
+.daily-close { width: 38px; height: 38px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text); font-size: 26px; line-height: 1; cursor: pointer; }
+.daily-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 50px; padding: 8px clamp(20px, 3vw, 52px); color: var(--text-muted); font-size: 12px; }
+.daily-timer { display: flex; align-items: center; gap: 11px; color: var(--text); font-variant-numeric: tabular-nums; }
+.daily-timer.is-up { color: var(--text-muted); }
+.daily-timer strong { font-size: 17px; }
+.daily-timer-track { width: 95px; height: 5px; overflow: hidden; border-radius: 4px; background: var(--border); }
+.daily-timer-track > span { display: block; height: 100%; background: var(--text); transition: width 250ms linear; }
+.daily-stage { flex: 1; min-height: 0; padding: 0 clamp(20px, 3vw, 52px) 24px; overflow: auto; }
+.daily-columns { display: grid; grid-template-columns: minmax(330px, 1.35fr) minmax(260px, 1fr) minmax(240px, .88fr); gap: 16px; min-height: 100%; }
+.daily-panel { min-width: 0; padding: clamp(20px, 2vw, 32px); border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.daily-story { background: var(--surface-raised); }
+.daily-panel h2 { margin: 18px 0 26px; font-size: clamp(28px, 3vw, 42px); line-height: 1.14; letter-spacing: -.06em; }
+.daily-panel h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 0 0 20px; font-size: 15px; letter-spacing: -.02em; }
+.daily-panel h3 span, .daily-panel h3 small { color: var(--text-muted); font-size: 12px; font-weight: 500; }
+.daily-section-gap { margin-top: 34px !important; padding-top: 25px; border-top: 1px solid var(--border); }
+.daily-keyline { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.daily-key { color: var(--text); font-weight: 800; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.daily-chip, .daily-new { display: inline-flex; align-items: center; min-height: 25px; padding: 3px 8px; border: 1px solid var(--border-strong); border-radius: 6px; font-size: 11px; font-weight: 650; line-height: 1.2; }
+.daily-new { border-style: dashed; color: var(--text-muted); }
+.daily-facts { display: grid; gap: 0; margin: 0 0 30px; }
+.daily-facts > div { display: grid; grid-template-columns: 105px 1fr; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.daily-facts dt { color: var(--text-muted); font-size: 12px; }
+.daily-facts dd { margin: 0; font-size: 13px; font-weight: 600; line-height: 1.45; }
+.daily-description { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); font-size: 14px; line-height: 1.7; }
+.daily-list { display: grid; gap: 11px; }
+.daily-list-item { display: grid; gap: 11px; padding: 15px; border: 1px solid var(--border); border-radius: 10px; background: var(--page); }
+.daily-list-item > strong { font-size: 13px; line-height: 1.45; }
+.daily-list-item small { color: var(--text-muted); font-size: 11px; }
+.daily-footer { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 20px; padding: 16px clamp(20px, 3vw, 52px); border-top: 1px solid var(--border); background: var(--surface); }
+.daily-nav { min-width: 105px; padding: 11px 14px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--page); color: var(--text); cursor: pointer; }
+.daily-nav:disabled { opacity: .4; cursor: default; }
+.daily-rail { display: flex; gap: 6px; min-width: 0; overflow-x: auto; scrollbar-width: thin; }
+.daily-rail button { flex: none; padding: 8px 11px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 11px; }
+.daily-rail button:hover, .daily-rail button.active { border-color: var(--border-strong); background: var(--surface-raised); color: var(--text); }
+.daily-rail button.active { font-weight: 800; }
+.daily-empty { display: grid; place-items: center; min-height: 40vh; color: var(--text-muted); text-align: center; }
+.daily-recap { height: 100%; }
+.daily-recap-intro { margin: 6px 0 20px; }
+.daily-recap-intro h2 { margin: 8px 0 5px; font-size: 32px; }
+.daily-recap-intro p { color: var(--text-muted); font-size: 13px; }
+.daily-recap-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.daily-recap-row { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 13px; line-height: 1.4; }
+.daily-recap-row small { display: block; margin-top: 4px; color: var(--text-muted); }
+@media (max-width: 1000px) { .daily-columns { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } .daily-story { grid-row: span 2; } .daily-recap-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 700px) { .daily-header { flex-direction: column; gap: 12px; padding-block: 18px; } .daily-header-actions { width: 100%; justify-content: space-between; } .daily-columns, .daily-recap-grid { grid-template-columns: 1fr; } .daily-story { grid-row: auto; } .daily-footer { gap: 6px; grid-template-columns: auto minmax(0, 1fr) auto; padding: 10px; } .daily-nav { min-width: 0; padding: 9px; font-size: 12px; } .daily-rail button { padding: 8px; } }

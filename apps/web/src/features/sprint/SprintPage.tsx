@@ -1,25 +1,9 @@
 import { useEffect, useState } from 'react';
+import DailyMode from './DailyMode';
+import type { Mapping, Role, Snapshot, Ticket } from './types';
 import './sprint.css';
 
-type Role = 'backlog' | 'in_progress' | 'ready_for_testing' | 'in_testing' | 'done' | 'blocked' | 'other';
 type Tab = 'overview' | 'development' | 'testing';
-interface MappedStatus { id: string; name: string; category: string; role: Role }
-interface Mapping { confirmed: boolean; statuses: MappedStatus[] }
-interface Ticket {
-  key: string; type: string; summary: string; status: string; statusCategory: string; statusRole: Role;
-  statusEnteredAt: string | null; statusAgeMs: number | null;
-  assignee: string | null; tester: string | null;
-  testing: 'none' | 'ready' | 'in_testing' | 'finished'; testingAgeMs: number | null; testingWaitingAgeMs: number | null;
-  testingTask: { key: string; status: string; url: string } | null;
-  subtasks: Array<{ key: string; summary: string; status: string; url: string }>;
-  storyPoints: number | null; originalEstimateSeconds: number | null;
-  timeSpentSeconds: number; updatedAt: string | null; url: string;
-}
-interface Snapshot {
-  source: 'mock' | 'jira'; fetchedAt: string; statusMappingConfirmed: boolean;
-  sprint: { id: number; name: string; goal: string | null; url: string } | null;
-  tickets: Ticket[];
-}
 const roleLabels: Record<Role, string> = {
   backlog: 'Backlog', in_progress: 'In development', ready_for_testing: 'Ready for testing',
   in_testing: 'In testing', done: 'Done', blocked: 'Blocked', other: 'Other',
@@ -50,6 +34,7 @@ export default function SprintPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
+  const [dailyOpen, setDailyOpen] = useState(false);
   const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
@@ -96,7 +81,7 @@ export default function SprintPage() {
       <div className="eyebrow"><span className="eyebrow-dot" /> Ticketing / Jira</div>
       <h1 id="sprint-heading" className="sprint-title">Active sprint<span className="title-period">.</span></h1>
       <p className="sprint-description">A clear view of the work your team is moving through the sprint.</p>
-    </div><button className="refresh-button" type="button" onClick={() => setRefresh((value) => value + 1)} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button></div>
+    </div><div className="sprint-actions"><button className="refresh-button" type="button" onClick={() => setRefresh((value) => value + 1)} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button><button className="refresh-button daily-launch" type="button" onClick={() => setDailyOpen(true)} disabled={!snapshot?.sprint || loading}>Start daily ↗</button></div></div>
     {error ? <div className="sprint-alert" role="alert">{error}</div> : null}
     {snapshot ? <>
       <div className="sprint-context"><div><span className="context-label">Current sprint</span><strong>{snapshot.sprint?.name ?? 'No active sprint'}</strong>{snapshot.sprint?.goal ? <span className="sprint-goal">{snapshot.sprint.goal}</span> : null}</div>
@@ -124,5 +109,6 @@ export default function SprintPage() {
         </tr>)}</tbody></table>{!visible.length ? <div className="empty-state">No tickets in this view.</div> : null}</div>
       </div>
     </> : !loading && !error ? <div className="empty-state">No active sprint data yet.</div> : null}
+    {snapshot && dailyOpen ? <DailyMode snapshot={snapshot} onClose={() => setDailyOpen(false)} /> : null}
   </section>;
 }
