@@ -2,6 +2,12 @@
 
 One place for your team's work. This repository currently contains the application foundation: a web shell with light and dark themes and a small API. Integrations will be added in separate steps.
 
+## Project direction
+
+UniteDesk is an open source workspace for teams that use several tools to manage work. The planned integrations include Jira, Notion and Linear for work items; GitLab and GitHub for code; Confluence for documentation; and Teams and Slack for notifications. The application will keep links to original records and expose only the actions supported by each connected tool.
+
+The current version is an initial scaffold. It does not connect to external services yet.
+
 ## Requirements
 
 - Node.js 22.12 or newer
