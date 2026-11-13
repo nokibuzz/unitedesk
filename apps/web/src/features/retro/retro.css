@@ -1,0 +1,135 @@
+.retro-page { max-width: 1440px; margin: 0 auto; padding-bottom: 80px; }
+.retro-page .sprint-title { margin: 15px 0 8px; }
+.retro-back { display: flex; width: fit-content; margin-bottom: 25px; color: var(--text-muted); font-size: 13px; text-decoration: none; }
+.retro-back:hover, .retro-muted a:hover { color: var(--text); }
+.retro-muted { margin: 9px 0; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+.retro-muted a { color: var(--text); }
+.retro-small { margin-top: 24px; font-size: 11px; }
+.retro-demo-note, .retro-demo-badge { display: inline-block; padding: 9px 12px; border-radius: 8px; background: var(--surface-raised); color: var(--text-muted); font-size: 11px; }
+.retro-demo-note { margin: 18px 0 0; }
+.retro-panel { min-width: 0; padding: 25px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.retro-panel h2 { margin: 6px 0 20px; font-size: 21px; letter-spacing: -.03em; }
+.retro-kicker { color: var(--text-muted); font-size: 10px; font-weight: 750; letter-spacing: .15em; text-transform: uppercase; }
+.retro-field { display: grid; gap: 7px; min-width: 0; margin: 13px 0; }
+.retro-field > span { color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.retro-field input, .retro-field select, .retro-field textarea, .retro-column textarea, .retro-group-form input { box-sizing: border-box; width: 100%; min-height: 41px; padding: 10px 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--page); color: var(--text); font: inherit; font-size: 13px; }
+.retro-field textarea, .retro-column textarea { resize: vertical; line-height: 1.45; }
+.retro-field input:focus, .retro-field select:focus, .retro-field textarea:focus, .retro-column textarea:focus, .retro-group-form input:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+.retro-primary, .retro-secondary { min-height: 40px; padding: 9px 14px; border-radius: 8px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.retro-primary { border: 1px solid var(--text); background: var(--text); color: var(--surface); }
+.retro-secondary { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); }
+.retro-primary:hover:not(:disabled), .retro-secondary:hover:not(:disabled) { opacity: .8; }
+.retro-primary:disabled, .retro-secondary:disabled { opacity: .48; cursor: not-allowed; }
+.retro-lobby-grid { display: grid; grid-template-columns: minmax(330px, .9fr) minmax(330px, 1.1fr); gap: 17px; margin-top: 35px; }
+.retro-side-stack { display: grid; align-content: start; gap: 17px; }
+.retro-session-list { display: grid; gap: 8px; }
+.retro-session-list a { display: grid; gap: 4px; padding: 11px 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--page); color: var(--text); text-decoration: none; }
+.retro-session-list a:hover { border-color: var(--border-strong); }
+.retro-session-list span { color: var(--text-muted); font-size: 11px; }
+.retro-global-actions { margin-top: 18px; }
+.retro-panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.retro-panel-head > strong { color: var(--text-muted); font-size: 11px; }
+.retro-actions-list { display: grid; gap: 8px; }
+.retro-action { display: flex; align-items: center; gap: 12px; padding: 11px; border: 1px solid var(--border); border-radius: 9px; }
+.retro-action-check { width: 29px; height: 29px; flex: none; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--page); color: var(--text); cursor: pointer; }
+.retro-action-check:hover { background: var(--text); color: var(--surface); }
+.retro-action > div { display: grid; gap: 4px; }
+.retro-action strong { font-size: 12px; }
+.retro-action span { color: var(--text-muted); font-size: 11px; }
+.retro-join-name { max-width: 410px; margin-top: 25px; }
+.retro-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; }
+.retro-top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.retro-stage-list { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin: 32px 0 22px; }
+.retro-stage-list > div { display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-size: 11px; font-weight: 650; }
+.retro-stage-list > div span { font-size: 10px; opacity: .7; }
+.retro-stage-list > div.active { border-color: var(--text); color: var(--text); background: var(--surface); }
+.retro-stage-list > div.done { color: var(--text); }
+.retro-layout { display: grid; grid-template-columns: minmax(0, 1fr) 275px; gap: 18px; align-items: start; }
+.retro-main { min-width: 0; }
+.retro-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 22px; }
+.retro-section-heading h2 { margin: 8px 0 5px; font-size: 27px; letter-spacing: -.04em; }
+.retro-section-heading p { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.55; }
+.retro-people { position: sticky; top: 24px; }
+.retro-person { display: flex; align-items: center; gap: 8px; margin: 9px 0; }
+.retro-avatar { display: grid; place-items: center; width: 30px; height: 30px; flex: none; border-radius: 50%; background: var(--surface-raised); font-size: 11px; font-weight: 700; }
+.retro-person > div { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.retro-person strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.retro-person small { color: var(--text-muted); font-size: 10px; }
+.retro-person > span:last-child:not(.retro-avatar) { color: var(--text-muted); font-size: 10px; }
+.retro-person > span.finished { color: var(--text) !important; font-weight: 700; }
+.retro-facilitator { margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border); }
+.retro-facilitator p { color: var(--text-muted); font-size: 11px; line-height: 1.5; }
+.retro-facilitator button { width: 100%; }
+.retro-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.retro-column { display: flex; flex-direction: column; min-width: 0; min-height: 235px; padding: 17px; border: 1px solid var(--border); border-top: 4px solid; border-radius: 10px; background: var(--surface); }
+.retro-column-head { display: flex; justify-content: space-between; gap: 8px; }
+.retro-column-head h3 { margin: 0; font-size: 14px; }
+.retro-column-head span { color: var(--text-muted); font-size: 10px; }
+.retro-card-list { display: grid; align-content: start; gap: 7px; flex: 1; margin: 18px 0; }
+.retro-card { position: relative; padding: 12px 30px 12px 12px; border: 1px solid var(--border); border-radius: 7px; background: var(--page); }
+.retro-card p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.5; }
+.retro-card button { position: absolute; top: 4px; right: 7px; border: 0; background: transparent; color: var(--text-muted); font-size: 19px; cursor: pointer; }
+.retro-column form { display: grid; gap: 8px; }
+.retro-collect-footer, .retro-next-bar { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 18px; }
+.retro-collect-footer strong { font-size: 13px; }
+.retro-collect-footer p, .retro-next-bar p { margin: 4px 0; color: var(--text-muted); font-size: 11px; }
+.retro-next-bar { padding: 16px 0; border-top: 1px solid var(--border); }
+.retro-presentation { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 14px; }
+.retro-focus h2, .retro-discussion-main h2 { margin-top: 10px; overflow-wrap: anywhere; font-size: 24px; }
+.retro-group-cards { display: grid; gap: 8px; }
+.retro-group-card { padding: 12px 14px; border: 1px solid var(--border); border-left: 4px solid; border-radius: 8px; background: var(--page); }
+.retro-group-card span { color: var(--text-muted); font-size: 10px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.retro-group-card p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 13px; line-height: 1.55; }
+.retro-focus-controls { display: flex; gap: 7px; margin-top: 20px; }
+.retro-group-list h2 { margin-bottom: 13px; }
+.retro-group-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.retro-group-row.focused { color: var(--text); }
+.retro-group-row label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.retro-group-row label span { display: grid; gap: 3px; min-width: 0; }
+.retro-group-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.retro-group-row small { color: var(--text-muted); font-size: 10px; }
+.retro-group-row > div { display: flex; gap: 4px; }
+.retro-group-row button { border: 0; background: transparent; color: var(--text-muted); font-size: 10px; text-decoration: underline; cursor: pointer; }
+.retro-group-form { display: grid; gap: 8px; margin-top: 17px; }
+.retro-vote-budget { flex: none; padding: 11px 15px; border: 1px solid var(--text); border-radius: 8px; font-size: 12px; font-weight: 700; }
+.retro-vote-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px; }
+.retro-vote-card h3 { margin: 8px 0 15px; font-size: 17px; overflow-wrap: anywhere; }
+.retro-vote-control { display: flex; align-items: center; gap: 9px; margin-top: 19px; }
+.retro-vote-control button { width: 29px; height: 29px; border: 1px solid var(--border-strong); border-radius: 7px; background: var(--page); color: var(--text); cursor: pointer; }
+.retro-vote-control button:disabled { opacity: .4; cursor: not-allowed; }
+.retro-vote-control strong { min-width: 17px; text-align: center; }
+.retro-vote-control span { color: var(--text-muted); font-size: 10px; }
+.retro-discussion { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 13px; }
+.retro-priority-list { display: grid; align-content: start; gap: 7px; }
+.retro-priority-list button { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 3px 7px; text-align: left; padding: 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); cursor: pointer; }
+.retro-priority-list button.active { border-color: var(--text); }
+.retro-priority-list button:disabled { cursor: default; }
+.retro-priority-list span { grid-row: 1 / 3; color: var(--text-muted); font-size: 10px; }
+.retro-priority-list strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.retro-priority-list b { color: var(--text-muted); font-size: 10px; font-weight: 500; }
+.retro-vote-total { color: var(--text-muted); font-size: 11px; }
+.retro-discussion-notes { margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--border); }
+.retro-discussion-notes h3 { margin: 0 0 9px; font-size: 14px; }
+.retro-discussion-notes form { display: grid; justify-items: start; gap: 8px; }
+.retro-discussion-notes textarea { box-sizing: border-box; width: 100%; padding: 10px 11px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--page); color: var(--text); font: inherit; font-size: 12px; line-height: 1.5; resize: vertical; }
+.retro-discussion-notes form span { color: var(--text-muted); font-size: 10px; }
+.retro-topic-actions { margin-top: 24px; padding-top: 15px; border-top: 1px solid var(--border); }
+.retro-topic-actions h3 { margin: 0 0 10px; font-size: 14px; }
+.retro-topic-action { display: grid; gap: 4px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.retro-topic-action strong { font-size: 12px; }
+.retro-topic-action span { color: var(--text-muted); font-size: 10px; }
+.retro-action-form { margin-top: 17px; }
+.retro-action-form > div { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; }
+.retro-settings-list { display: grid; gap: 10px; }
+.retro-settings-column { display: grid; grid-template-columns: 26px minmax(0, 1fr) 95px 28px; align-items: end; gap: 9px; }
+.retro-settings-number { align-self: center; color: var(--text-muted); font-size: 10px; }
+.retro-settings-column .settings-input { gap: 5px; }
+.retro-color-field input { padding: 3px; cursor: pointer; }
+.retro-icon-button { height: 40px; border: 0; background: transparent; color: var(--text-muted); font-size: 22px; cursor: pointer; }
+.retro-icon-button:disabled { opacity: .35; }
+.retro-votes-setting { max-width: 240px; margin-top: 25px; }
+.retro-settings-link { color: var(--text); font-size: 13px; }
+@media (max-width: 1120px) { .retro-layout { grid-template-columns: 1fr; } .retro-people { position: static; grid-row: 1; } }
+@media (max-width: 760px) { .retro-lobby-grid, .retro-presentation, .retro-discussion { grid-template-columns: 1fr; } .retro-stage-list { display: flex; overflow-x: auto; } .retro-stage-list > div { flex: none; } .retro-top { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 530px) { .retro-panel { padding: 18px; } .retro-settings-column { grid-template-columns: 20px minmax(0, 1fr) 58px 25px; } .retro-collect-footer, .retro-next-bar { align-items: flex-start; flex-direction: column; } .retro-action-form > div { grid-template-columns: 1fr; } }
+@media print { .site-header, .demo-banner, .site-footer, .retro-back, .retro-top-actions, .retro-stage-list, .retro-people, .retro-priority-list, .retro-action-form, .retro-focus-controls, .retro-next-bar { display: none !important; } .retro-layout, .retro-discussion { display: block; } .retro-panel { border-color: #aaa; } .retro-page { max-width: none; } }

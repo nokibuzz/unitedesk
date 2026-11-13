@@ -5,6 +5,7 @@
 .tools-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
 .tools-card-icon { flex: none; display: grid; place-items: center; width: 72px; height: 72px; border: 1px solid var(--border); border-radius: 16px; background: var(--page); }
 .tools-card-icon svg { width: 54px; height: 54px; }
+.tools-retro-icon { font-size: 43px; line-height: 1; }
 .tools-card-kicker { color: var(--text-muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .tools-card h2 { margin: 9px 0 8px; font-size: 24px; }
 .tools-card p { max-width: 440px; margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.6; }

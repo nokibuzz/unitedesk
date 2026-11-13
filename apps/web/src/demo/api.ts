@@ -3,6 +3,7 @@ import type { MergeRequest, ReviewSnapshot } from '../features/reviews/types';
 import type { TeamSettings } from '../features/settings/types';
 import type { UsefulLink } from '../features/useful-links/types';
 import { demoPokerResponse } from './poker';
+import { demoRetroResponse } from './retro';
 
 const ago = (hours: number) => new Date(Date.now() - hours * 3_600_000).toISOString();
 const DAY = 24;
@@ -70,6 +71,7 @@ export async function demoResponse(input: string, init?: RequestInit): Promise<R
   if (init?.signal?.aborted) throw new DOMException('Request aborted', 'AbortError');
   const url = new URL(input, 'https://demo.unitedesk.invalid');
   if (url.pathname.startsWith('/api/poker/')) return demoPokerResponse(url, init, sprintTickets);
+  if (url.pathname.startsWith('/api/retro/')) return demoRetroResponse(url, init);
   if ((init?.method ?? 'GET').toUpperCase() !== 'GET') return Response.json({ error: 'The public demo is read-only. Run UniteDesk locally to change settings.' }, { status: 403 });
   const pathname = url.pathname;
   if (pathname === '/api/sprint/active') return Response.json(sprint());

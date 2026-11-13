@@ -5,10 +5,11 @@ import type { Mapping, Role } from '../sprint/types';
 import type { TeamSettings } from './types';
 import UsefulLinksSettings from './UsefulLinksSettings';
 import CodeReviewSettings from './CodeReviewSettings';
+import RetroSettings from '../retro/RetroSettings';
 import { apiFetch } from '../../app/api';
 import './settings.css';
 
-type SettingsTab = 'personal' | 'team';
+type SettingsTab = 'personal' | 'team' | 'retro';
 type TeamDraft = Omit<TeamSettings, 'dailyCutoffHour' | 'dailyTicketSeconds' | 'gitlabStaleDays'> & {
   dailyCutoffHour: string; dailyTicketSeconds: string; gitlabStaleDays: string;
 };
@@ -29,7 +30,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   defaultSection: MainSection; onDefaultSectionChange: (section: MainSection) => void;
 }) {
   const demo = import.meta.env.MODE === 'demo';
-  const [tab, setTab] = useState<SettingsTab>(() => window.location.hash === '#/settings/team' ? 'team' : 'personal');
+  const [tab, setTab] = useState<SettingsTab>(() => window.location.hash === '#/settings/retro' ? 'retro' : window.location.hash === '#/settings/team' ? 'team' : 'personal');
   const [team, setTeam] = useState<TeamDraft | null>(null);
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -41,7 +42,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   const [savingTeam, setSavingTeam] = useState(false);
   const [savingMapping, setSavingMapping] = useState(false);
   useEffect(() => {
-    const onHashChange = () => { if (window.location.hash === '#/settings/team') { setTab('team'); requestAnimationFrame(() => document.getElementById('useful-links-settings')?.scrollIntoView({ block: 'start' })); } };
+    const onHashChange = () => { if (window.location.hash === '#/settings/retro') setTab('retro'); else if (window.location.hash === '#/settings/team') { setTab('team'); requestAnimationFrame(() => document.getElementById('useful-links-settings')?.scrollIntoView({ block: 'start' })); } };
     onHashChange();
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
@@ -88,9 +89,10 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
     <div className="settings-tabs" role="tablist" aria-label="Settings sections">
       <button type="button" role="tab" id="settings-personal-tab" aria-controls="settings-panel" aria-selected={tab === 'personal'} className={tab === 'personal' ? 'active' : ''} onClick={() => setTab('personal')}>Personal</button>
       <button type="button" role="tab" id="settings-team-tab" aria-controls="settings-panel" aria-selected={tab === 'team'} className={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>Team</button>
+      <button type="button" role="tab" id="settings-retro-tab" aria-controls="settings-panel" aria-selected={tab === 'retro'} className={tab === 'retro' ? 'active' : ''} onClick={() => setTab('retro')}>Retrospective</button>
     </div>
     <div id="settings-panel" role="tabpanel" aria-labelledby={`settings-${tab}-tab`}>
-      {tab === 'personal' ? <div className="settings-stack">
+      {tab === 'retro' ? <RetroSettings /> : tab === 'personal' ? <div className="settings-stack">
         <div className="settings-card"><div className="settings-card-heading"><div><h2>Appearance</h2><p>Choose how UniteDesk looks in this browser.</p></div><span className="settings-scope">This browser</span></div>
           <div className="settings-field"><span className="settings-label">Theme</span><div className="settings-choice-group" role="group" aria-label="Theme">{(['system', 'light', 'dark'] as const).map((option) => <button type="button" key={option} aria-pressed={mode === option} className={mode === option ? 'selected' : ''} onClick={() => onModeChange(option)}>{option === 'system' ? 'System' : option === 'light' ? 'Light' : 'Dark'}</button>)}</div></div>
         </div>

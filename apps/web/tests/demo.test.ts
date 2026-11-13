@@ -49,3 +49,37 @@ test('public demo lets one browser try Poker without changing provider data', as
   assert.equal(next.revealed, false);
   assert.equal(next.estimate, null);
 });
+
+test('public demo runs the retrospective flow with browser-only sample teammates', async () => {
+  const send = async (path: string, method = 'GET', body?: unknown) => demoResponse(`/api/retro${path}`, { method, body: body === undefined ? undefined : JSON.stringify(body) });
+  const settings = await (await send('/settings')).json();
+  assert.equal(settings.votesPerPerson, 5);
+  const created = await (await send('/sessions', 'POST', { title: 'Demo retro', scheduledAt: new Date(Date.now() - 60_000).toISOString(), displayName: 'You' })).json();
+  const code = created.code as string;
+  assert.equal(created.cards.length, 0, 'Sample teammates’ cards stay hidden during collection');
+  const card = await (await send(`/sessions/${code}/cards`, 'POST', { columnId: settings.columns[0].id, text: 'Better handoffs' })).json();
+  assert.equal(card.cards.length, 1);
+  const finished = await (await send(`/sessions/${code}/finish`, 'POST', { finished: true })).json();
+  assert.equal(finished.readyToPresent, true);
+  const presented = await (await send(`/sessions/${code}/phase`, 'POST', { phase: 'present' })).json();
+  assert.equal(presented.cards.length, 4);
+  const groupIds = presented.groups.slice(0, 2).map((group: { id: string }) => group.id);
+  const grouped = await (await send(`/sessions/${code}/groups`, 'POST', { groupIds, title: 'Communication' })).json();
+  assert.equal(grouped.groups.length, 3);
+  const voting = await (await send(`/sessions/${code}/phase`, 'POST', { phase: 'vote' })).json();
+  const groupId = voting.groups[0].id as string;
+  const voted = await (await send(`/sessions/${code}/votes`, 'POST', { groupId, count: 3 })).json();
+  assert.equal(voted.votesUsed, 3);
+  assert.ok(voted.groups.every((group: { votes: number }) => group.votes === 0), 'Totals stay hidden before discussion');
+  const discussed = await (await send(`/sessions/${code}/phase`, 'POST', { phase: 'discuss' })).json();
+  assert.ok(discussed.groups.some((group: { votes: number }) => group.votes > 0));
+  const noted = await (await send(`/sessions/${code}/groups/${groupId}/notes`, 'POST', { notes: 'Agree on a daily review rotation' })).json();
+  assert.equal(noted.groups.find((group: { id: string }) => group.id === groupId).notes, 'Agree on a daily review rotation');
+  const withAction = await (await send(`/sessions/${code}/actions`, 'POST', { groupId, text: 'Rotate reviewer', assigneeId: 'browser-user', dueDate: null })).json();
+  assert.equal(withAction.actions.length, 1);
+  const closed = await (await send(`/sessions/${code}/phase`, 'POST', { phase: 'closed' })).json();
+  assert.equal(closed.phase, 'closed');
+  assert.equal((await (await send('/actions')).json()).actions.length, 1);
+  await send(`/actions/${withAction.actions[0].id}/complete`, 'POST');
+  assert.equal((await (await send('/actions')).json()).actions.length, 0);
+});

@@ -10,7 +10,7 @@
 
 UniteDesk brings active sprint work, code reviews, documentation, and team shortcuts into one workspace. Keep using the tools you already have: UniteDesk reads their data, organizes it for the team, and links back to the source. It is designed to be configurable for different teams instead of assuming one company's workflow.
 
-> **Demo notice:** The [public demo](https://nokibuzz.github.io/unitedesk/) uses synthetic data. Scrum Poker works inside your browser; its rooms are not shared with other visitors. Settings and provider data remain read-only. No accounts, tokens, or private company links are included.
+> **Demo notice:** The [public demo](https://nokibuzz.github.io/unitedesk/) uses synthetic data. Scrum Poker and Team Retrospective run inside your browser; sessions are not shared with other visitors. Provider data remains read-only. No accounts, tokens, or private company links are included.
 
 ## ✨ What you can do today
 
@@ -21,6 +21,7 @@ UniteDesk brings active sprint work, code reviews, documentation, and team short
 | 🔎 **Review Queue** | See open changes, your work, reviews waiting for you, aging requests, approvals, pipelines, and advanced filters | GitLab or GitHub |
 | 📚 **Knowledge** | Browse document trees, search across sources, read a preview, and open the original page | Confluence, GitHub Markdown, Notion |
 | 🃏 **Scrum Poker** | Create a room, choose an active sprint ticket, vote privately, reveal results, compare median and vote distribution, and save a final estimate | Jira, Linear, local mock data |
+| 🔄 **Team Retrospective** | Schedule a session, collect private cards, group and present ideas, vote, discuss priorities, track actions, and export a PDF report | Shared local workspace; no external account required |
 | 🔗 **Useful links** | Shared shortcuts with icons, keywords, and fuzzy search from every page (`Ctrl/⌘+K`) | Any HTTP or HTTPS URL |
 | ⚙️ **Settings** | Light and dark themes, start page, team workflow rules, status mapping, and a GitLab or GitHub Review Queue connection | Browser and local server |
 
@@ -28,7 +29,7 @@ Scrum Poker can publish a confirmed story point estimate to a live Jira issue wh
 
 ## 🚀 Try it
 
-Open **[nokibuzz.github.io/unitedesk](https://nokibuzz.github.io/unitedesk/)**. Explore the sample sprint, start Daily mode, filter the Review Queue, search Knowledge, and open Useful links. Try **[Scrum Poker](https://nokibuzz.github.io/unitedesk/#/tools/poker)** with sample teammates. The demo is hosted as a static GitHub Pages site; it does not need an API server.
+Open **[nokibuzz.github.io/unitedesk](https://nokibuzz.github.io/unitedesk/)**. Explore the sample sprint, start Daily mode, filter the Review Queue, search Knowledge, and open Useful links. Try **[Scrum Poker](https://nokibuzz.github.io/unitedesk/#/tools/poker)** or **[Team Retrospective](https://nokibuzz.github.io/unitedesk/#/tools/retro)** with sample teammates. The demo is hosted as a static GitHub Pages site; it does not need an API server.
 
 To run your own workspace locally:
 
@@ -52,6 +53,23 @@ For teams that estimate time too, the host can enable optional **Development / Q
 
 ![Scrum Poker public demo with a sample sprint ticket, revealed votes, and estimate distribution](docs/assets/poker-demo.png)
 
+### 🔄 Turn retrospectives into follow-up work
+
+Set your team's columns and votes per person in **Settings → Retrospective**. A facilitator creates and schedules a session; the chosen defaults are saved with that session, so later setting changes do not alter an ongoing meeting. Participants can add cards before the meeting, finish their own input, and reopen it while collection is active. Other people's cards stay hidden until presentation.
+
+On or after the scheduled date, the facilitator can start presentation once everyone **currently present** has finished. Contributors who added cards earlier but are absent do not block the meeting. The facilitator can group similar cards and guide a shared spotlight, then open voting. Each participant can distribute up to the configured vote count (five by default); totals appear when discussion starts. Topics are ordered by votes. The team can capture discussion notes and assign action items with optional due dates. Open actions from every retrospective stay in one list until someone marks them complete. Closing the session enables a PDF report with cards, ranked themes, notes, votes, and actions.
+
+![Team Retrospective public demo showing ranked discussion topics, notes, and an action item](docs/assets/retro-demo.png)
+
+Live collaboration uses the same local server for everyone. To try it from several computers on a **trusted private LAN or VPN**, build once and start the server on the machine's network interface:
+
+```bash
+npm run build
+HOST=0.0.0.0 npm start
+```
+
+Open `http://<server-lan-ip>:3001` on each computer, then share a retrospective's invite link or eight-character code. The server sends phase, grouping, presence, notes, and vote updates to every connected participant. Sessions and open actions are persisted in the ignored `data/retrospectives.json` file; keep it in your backup plan. The static GitHub Pages demo simulates participants in one browser and offers **Print / Save as PDF** through the browser's print dialog. The local server provides a direct PDF download.
+
 ## 🔌 Connect real tools
 
 1. Follow [Connecting your tools](docs/integrations.md) to set up Jira or Linear and your documentation sources in a private `.env` file.
@@ -72,7 +90,7 @@ scripts/        Development, mock data, and integration checks
 .github/         Static demo deployment workflow
 ```
 
-Provider adapters normalize each tool's data into shared sprint, review, and document views. Scrum Poker uses the normalized active sprint tickets, so Jira, Linear, and mock data share the same voting flow. The public demo uses a separate static data source, so no private local files are part of the Pages artifact.
+Provider adapters normalize each tool's data into shared sprint, review, and document views. Scrum Poker uses the normalized active sprint tickets, so Jira, Linear, and mock data share the same voting flow. Retrospectives and their action items use local persistent storage and do not require a third-party account. The public demo uses a separate static data source, so no private local files are part of the Pages artifact.
 
 ## 🧪 Verify changes
 
@@ -87,7 +105,9 @@ npm run build:demo
 
 ## 🛡️ Project status and privacy
 
-UniteDesk is an early open source project. It does **not** have user authentication yet. Keep the API on the default loopback address; do not expose it directly to the internet. Poker rooms use a browser guest cookie, which is suitable for local testing but not public multi-tenant hosting. Use short-lived, least-privilege provider tokens and never commit them. The GitHub Pages demo contains only public sample data; its interactive Poker rooms are isolated to each browser.
+UniteDesk is an early open source project. It does **not** have user authentication yet. Keep the API on the default loopback address except for short-lived collaboration on a trusted LAN or VPN; do not expose it directly to the internet. Poker and retrospective sessions use browser guest cookies, which are suitable for local team testing but not public multi-tenant hosting. Use short-lived, least-privilege provider tokens and never commit them. The GitHub Pages demo contains only public sample data; its interactive tools are isolated to each browser.
+
+PDF reports embed [Noto Sans](https://github.com/google/fonts/tree/main/ofl/notosans), distributed under the [SIL Open Font License](apps/api/assets/OFL.txt).
 
 Planned work includes provider actions, safer multi-user authentication, easier connection setup, more integrations, and richer team workflows. See the repository issues to discuss what should come next.
 
