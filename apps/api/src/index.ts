@@ -4,6 +4,7 @@ import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { getMergeRequests } from './merge-requests/service.js';
+import { getDocuments } from './documents/service.js';
 import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
 import { getTeamSettings, saveTeamSettings } from './settings/team.js';
 
@@ -44,6 +45,12 @@ app.get('/api/merge-requests', async (request, response) => {
     console.error('Merge request list failed:', error);
     response.status(503).json({ error: error instanceof Error ? error.message : 'Merge requests are unavailable' });
   }
+});
+
+app.get('/api/documents', async (_request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json(await getDocuments()); }
+  catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Documents are unavailable' }); }
 });
 
 app.get(['/api/ticketing/status-mapping', '/api/jira/status-mapping'], async (_request, response) => {
