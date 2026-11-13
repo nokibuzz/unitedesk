@@ -115,6 +115,11 @@ a:focus-visible {
 
 .settings-link svg { width: 19px; height: 19px; }
 
+.demo-banner { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 9px 18px; border-bottom: 1px solid var(--border); background: var(--surface-raised); color: var(--text-muted); font-size: 12px; }
+.demo-banner strong { color: var(--text); }
+.demo-banner a { color: var(--text); }
+@media (max-width: 600px) { .demo-banner { flex-wrap: wrap; gap: 5px 10px; text-align: center; } }
+
 .main-content {
   flex: 1;
   padding-top: clamp(92px, 14vh, 160px);

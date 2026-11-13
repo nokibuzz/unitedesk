@@ -19,6 +19,7 @@ function SettingsIcon() {
   return <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M10 2.8h4l.7 2.1c.5.2 1 .4 1.5.7l2-.9 2.8 2.8-.9 2c.3.5.5 1 .7 1.5l2.1.7v4l-2.1.7c-.2.5-.4 1-.7 1.5l.9 2-2.8 2.8-2-.9c-.5.3-1 .5-1.5.7L14 23h-4l-.7-2.1c-.5-.2-1-.4-1.5-.7l-2 .9L3 18.3l.9-2c-.3-.5-.5-1-.7-1.5L1 14.1v-4l2.2-.7c.2-.5.4-1 .7-1.5l-.9-2 2.8-2.8 2 .9c.5-.3 1-.5 1.5-.7L10 2.8Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" transform="translate(1 0) scale(.92)"/><circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/></svg>;
 }
 export default function App() {
+  const demo = import.meta.env.MODE === 'demo';
   const { mode, setMode } = useTheme();
   const [defaultSection, setDefaultSectionState] = useState<MainSection>(getDefaultSection);
   const [section, setSection] = useState<Section>(() => sectionFromHash(getDefaultSection()));
@@ -35,6 +36,7 @@ export default function App() {
       <UsefulLinksLauncher />
       <a className="settings-link" href="#/settings" aria-label="Settings" aria-current={section === 'settings' ? 'page' : undefined} title="Settings"><SettingsIcon /></a>
     </div></header>
+    {demo ? <div className="demo-banner" role="status"><strong>Public demo</strong><span>Sample data · read-only workspace · no accounts connected</span><a href="https://github.com/nokibuzz/unitedesk" target="_blank" rel="noopener noreferrer">View source ↗</a></div> : null}
     <main className={`main-content ${section === 'documents' ? 'documents-main' : 'sprint-main'}`}>
       {section === 'sprint' ? <SprintPage /> : section === 'reviews' ? <ReviewQueuePage /> : section === 'documents' ? <DocumentsPage /> : <SettingsPage mode={mode} onModeChange={setMode} defaultSection={defaultSection} onDefaultSectionChange={setDefaultSection} />}
     </main>

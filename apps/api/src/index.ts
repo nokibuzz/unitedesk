@@ -7,6 +7,7 @@ import { getMergeRequests } from './merge-requests/service.js';
 import { getDocumentPage, getDocuments, searchDocuments } from './documents/service.js';
 import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
 import { getTeamSettings, saveTeamSettings } from './settings/team.js';
+import { getReviewConnection, publicReviewConnection, saveReviewConnection } from './settings/code-review.js';
 import { getUsefulLinks, saveUsefulLinks } from './useful-links/service.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -76,6 +77,22 @@ app.get('/api/settings/team', async (_request, response) => {
   response.set('Cache-Control', 'no-store');
   try { response.json({ settings: await getTeamSettings(projectDirectory) }); }
   catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Team settings are unavailable' }); }
+});
+
+app.get('/api/settings/code-review', async (_request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json({ connection: publicReviewConnection(await getReviewConnection(projectDirectory)) }); }
+  catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Code review settings are unavailable' }); }
+});
+
+app.put('/api/settings/code-review', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress ?? '')) {
+    response.status(403).json({ error: 'Code review settings can only be changed locally' });
+    return;
+  }
+  try { response.json({ connection: await saveReviewConnection(projectDirectory, request.body?.connection) }); }
+  catch (error) { response.status(400).json({ error: error instanceof Error ? error.message : 'Invalid code review settings' }); }
 });
 
 app.get('/api/useful-links', async (_request, response) => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '../../app/api';
 import { filterMergeRequests, pipelineValue, type ApprovalFilter, type Sort, type View } from './filter';
 import type { MergeRequest, Person, ReviewSnapshot } from './types';
 import './reviews.css';
@@ -53,7 +54,7 @@ export default function ReviewQueuePage() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    fetch(`/api/merge-requests${revision ? '?refresh=1' : ''}`, { signal: controller.signal })
+    apiFetch(`/api/merge-requests${revision ? '?refresh=1' : ''}`, { signal: controller.signal })
       .then(async (response) => { const body = await response.json() as ReviewSnapshot & { error?: string }; if (!response.ok) throw new Error(body.error || 'Could not load merge requests'); return body; })
       .then((body) => { setSnapshot(body); setError(''); })
       .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load merge requests'); })

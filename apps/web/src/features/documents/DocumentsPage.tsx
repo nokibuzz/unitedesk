@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '../../app/api';
 import './documents.css';
 
 type Source = 'confluence' | 'github' | 'notion';
@@ -64,7 +65,7 @@ export default function DocumentsPage() {
   useEffect(() => {
     const controller = new AbortController();
     setCatalogLoading(true);
-    fetch('/api/documents', { signal: controller.signal }).then(readResponse<Snapshot>)
+    apiFetch('/api/documents', { signal: controller.signal }).then(readResponse<Snapshot>)
       .then((body) => { setSnapshot(body); setCatalogError(''); })
       .catch((error: unknown) => { if (!controller.signal.aborted) setCatalogError(error instanceof Error ? error.message : 'Could not load documents'); })
       .finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); });
@@ -78,7 +79,7 @@ export default function DocumentsPage() {
     setSearch(null);
     setSearchLoading(true);
     const timer = window.setTimeout(() => {
-      fetch(`/api/documents/search?q=${encodeURIComponent(text)}`, { signal: controller.signal }).then(readResponse<SearchResponse>)
+      apiFetch(`/api/documents/search?q=${encodeURIComponent(text)}`, { signal: controller.signal }).then(readResponse<SearchResponse>)
         .then((body) => { setSearch(body); setSearchError(''); })
         .catch((error: unknown) => { if (!controller.signal.aborted) { setSearch(null); setSearchError(error instanceof Error ? error.message : 'Search failed'); } })
         .finally(() => { if (!controller.signal.aborted) setSearchLoading(false); });
@@ -91,7 +92,7 @@ export default function DocumentsPage() {
     const controller = new AbortController();
     setContentLoading(true);
     setContent(null);
-    fetch(`/api/documents/${encodeURIComponent(selectedId)}`, { signal: controller.signal }).then(readResponse<Content>)
+    apiFetch(`/api/documents/${encodeURIComponent(selectedId)}`, { signal: controller.signal }).then(readResponse<Content>)
       .then((body) => { setContent(body); setContentError(''); })
       .catch((error: unknown) => { if (!controller.signal.aborted) setContentError(error instanceof Error ? error.message : 'Could not open the page'); })
       .finally(() => { if (!controller.signal.aborted) setContentLoading(false); });

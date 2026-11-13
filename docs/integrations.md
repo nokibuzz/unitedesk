@@ -2,7 +2,7 @@
 
 UniteDesk uses provider adapters so the same ticketing, daily, and review views work with different services. Today `TICKETING_PROVIDER` accepts `mock`, `jira`, or `linear`; `CODE_REVIEW_PROVIDER` accepts `mock`, `gitlab`, or `github`. `DOCUMENTATION_PROVIDERS` accepts a comma-separated list of `confluence`, `github`, and `notion`, which appear together in **Knowledge**. The older single-provider `DOCUMENTATION_PROVIDER` works when the new selector is absent. Automatic connection setup is planned. The older `JIRA_MODE` and `GITLAB_MODE` variables still work when the corresponding provider selector is absent.
 
-Use synthetic data in a test workspace. Keep tokens in the local, ignored `.env` file and keep `HOST=127.0.0.1`. The API has no user authentication and must not be exposed to a network. The `.env`, `mock/`, and `data/` paths are ignored by Git. Never paste a token into an issue, screenshot, commit, or browser console.
+Use synthetic data in a test workspace. Keep tokens in the local, ignored `.env` file or save a code review token through **Settings → Team → Code review source**. Keep `HOST=127.0.0.1`. The API has no user authentication and must not be exposed to a network. The `.env`, `mock/`, and `data/` paths are ignored by Git. Never paste a token into an issue, screenshot, commit, or browser console. The public [GitHub Pages demo](https://nokibuzz.github.io/unitedesk/) has no server or credentials.
 
 ## Local start and mock data
 
@@ -50,7 +50,9 @@ The same Overview, Development, Testing, and Daily views now read the active Lin
 
 1. Create or choose a GitLab group, a project inside it, and at least one open merge request. The Review Queue includes the group and its subgroups.
 2. Create a short-lived [personal access token](https://docs.gitlab.com/user/profile/personal_access_tokens/) with the [`read_api` scope](https://docs.gitlab.com/security/tokens/access_token_scopes/). A personal token lets **My changes** and **For my review** reflect its owner.
-3. Add these values to `.env`:
+3. In **Settings → Team → Code review source**, choose GitLab. Enter the base URL (for example, `https://gitlab.com`), full group path, and token. Save, then revisit Review Queue. The token is stored in ignored `data/code-review-connection.json` with restricted file permissions and is not returned by the API. Leave the token field blank later to keep the saved token, or enter a replacement.
+
+If you prefer server configuration, these `.env` values are also supported as defaults:
 
 ```dotenv
 CODE_REVIEW_PROVIDER=gitlab
@@ -64,7 +66,9 @@ Open **Review Queue** and check project, author, branches, draft state, pipeline
 ## GitHub
 
 1. Create a short-lived [fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) limited to the repositories you want to read. Grant the read permissions required by repository discovery, pull requests, reviews, commit statuses, and checks. The token owner must be able to see the chosen repositories.
-2. Configure `.env`:
+2. In **Settings → Team → Code review source**, choose GitHub. Enter the GitHub API URL (normally `https://api.github.com`), optional owner and repository list, and token. Save, then revisit Review Queue. Leave the token field blank later to keep it, or enter a replacement.
+
+If you prefer server configuration, these `.env` values are also supported as defaults:
 
 ```dotenv
 CODE_REVIEW_PROVIDER=github
@@ -93,7 +97,7 @@ Open **Knowledge** to browse spaces and nested pages. Type at least two characte
 
 ## GitHub Markdown documentation
 
-Use the existing server-side `GITHUB_TOKEN` with **Contents: read** permission for the chosen repositories. The documentation repository list is explicit, independent of `GITHUB_REPOS` used for the Review Queue. Set:
+Use a server-side `GITHUB_TOKEN` in `.env` with **Contents: read** permission for the chosen repositories. The documentation adapter currently reads this environment token independently of the Review Queue token saved in Settings. The documentation repository list is explicit, independent of `GITHUB_REPOS` used for the Review Queue. Set:
 
 ```dotenv
 DOCUMENTATION_PROVIDERS=confluence,github

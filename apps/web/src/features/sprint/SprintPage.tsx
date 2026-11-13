@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DailyMode from './DailyMode';
+import { apiFetch } from '../../app/api';
 import type { Snapshot, Ticket } from './types';
 import './sprint.css';
 
@@ -33,7 +34,7 @@ export default function SprintPage() {
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    fetch('/api/sprint/active', { signal: controller.signal }).then(async (response) => {
+    apiFetch('/api/sprint/active', { signal: controller.signal }).then(async (response) => {
       const sprint = await response.json() as Snapshot & { error?: string };
       if (!response.ok) throw new Error(sprint.error || 'Could not load the active sprint');
       return sprint;

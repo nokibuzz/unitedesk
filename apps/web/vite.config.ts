@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    base: mode === 'demo' ? '/unitedesk/' : '/',
     server: {
       proxy: {
         '/api': `http://127.0.0.1:${apiPort}`,

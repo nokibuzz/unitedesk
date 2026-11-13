@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { decorateItems } from './model.js';
 import { getTeamSettings } from '../settings/team.js';
+import { getReviewConnection, type ReviewConnection } from '../settings/code-review.js';
+import { createHash } from 'node:crypto';
 import { githubAdapter } from './github.js';
 import type { ReviewAdapter } from './adapter.js';
 import type { GitLabPerson, MergeRequest, ReviewSnapshot } from './types.js';
@@ -22,10 +24,10 @@ const person = (raw?: { username?: string; name?: string }): GitLabPerson => ({ 
 const nullableInt = (value: unknown): number | null => typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : null;
 const nullableBool = (value: unknown): boolean | null => typeof value === 'boolean' ? value : null;
 
-function settings() {
-  const urlRaw = process.env.GITLAB_URL?.trim();
-  const group = process.env.GITLAB_GROUP?.trim();
-  const token = process.env.GITLAB_TOKEN?.trim();
+function settings(connection: ReviewConnection) {
+  const urlRaw = connection.gitlab.url;
+  const group = connection.gitlab.group;
+  const token = connection.gitlab.token;
   if (!urlRaw || !group || !token) throw new Error('Set GITLAB_URL, GITLAB_GROUP and GITLAB_TOKEN for GitLab access');
   const url = new URL(urlRaw);
   if (!['https:', 'http:'].includes(url.protocol)) throw new Error('GITLAB_URL must be an HTTP URL');
@@ -55,8 +57,8 @@ async function mapPool<T, R>(items: T[], limit: number, fn: (item: T) => Promise
   }));
   return result;
 }
-async function liveSnapshot(staleAfterDays: number): Promise<ReviewSnapshot> {
-  const { base, group, token } = settings();
+async function liveSnapshot(staleAfterDays: number, connection: ReviewConnection): Promise<ReviewSnapshot> {
+  const { base, group, token } = settings(connection);
   const viewer = person((await gitlabGet<{ username?: string; name?: string }>(base, token, '/api/v4/user')).body);
   if (viewer.username === 'unknown') throw new Error('GitLab did not return a current username');
   const rows: GitLabMr[] = [];
@@ -108,22 +110,22 @@ async function mockSnapshot(root: string, staleAfterDays: number): Promise<Revie
 }
 let cache: { key: string; expires: number; promise: Promise<ReviewSnapshot> } | null = null;
 export async function getMergeRequests(root: string, refresh = false): Promise<ReviewSnapshot> {
-  const mode = process.env.CODE_REVIEW_PROVIDER?.trim() || process.env.GITLAB_MODE?.trim() || 'mock';
+  const connection = await getReviewConnection(root);
+  const mode = connection.provider;
   const adapters: Record<string, ReviewAdapter> = {
-    gitlab: { source: 'gitlab', load: (_root, days) => liveSnapshot(days) },
+    gitlab: { source: 'gitlab', load: (_root, days, config) => liveSnapshot(days, config) },
     mock: { source: 'mock', load: (directory, days) => mockSnapshot(directory, days) },
     github: githubAdapter,
   };
   const adapter = adapters[mode];
   if (!adapter) throw new Error('CODE_REVIEW_PROVIDER must be mock, gitlab or github');
   const { gitlabStaleDays } = await getTeamSettings(root);
-  if (mode === 'mock') return adapter.load(root, gitlabStaleDays);
-  const key = [mode, process.env.GITLAB_URL, process.env.GITLAB_GROUP, process.env.GITLAB_TOKEN,
-    process.env.GITHUB_API_URL, process.env.GITHUB_OWNER, process.env.GITHUB_REPOS, process.env.GITHUB_TOKEN, gitlabStaleDays].join('|');
+  if (mode === 'mock') return adapter.load(root, gitlabStaleDays, connection);
+  const key = createHash('sha256').update(JSON.stringify({ connection, gitlabStaleDays })).digest('hex');
   const ttl = Number(process.env.GITLAB_CACHE_TTL_MS ?? 30_000);
   if (!Number.isInteger(ttl) || ttl < 0 || ttl > 3_600_000) throw new Error('GITLAB_CACHE_TTL_MS must be between 0 and 3600000');
   if (!refresh && cache?.key === key && Date.now() < cache.expires) return cache.promise;
-  const promise = adapter.load(root, gitlabStaleDays);
+  const promise = adapter.load(root, gitlabStaleDays, connection);
   cache = { key, expires: Date.now() + ttl, promise };
   try { return await promise; }
   catch (error) { if (cache?.promise === promise) cache = null; throw error; }

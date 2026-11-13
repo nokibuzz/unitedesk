@@ -1,5 +1,6 @@
 import { decorateItems } from './model.js';
 import type { ReviewAdapter } from './adapter.js';
+import type { ReviewConnection } from '../settings/code-review.js';
 import type { GitLabPerson, MergeRequest, ReviewSnapshot } from './types.js';
 
 interface GitHubPerson { login: string; name?: string | null }
@@ -13,14 +14,14 @@ interface GitHubReview { user: GitHubPerson | null; state: string; submitted_at:
 interface GitHubStatus { state: string; total_count: number }
 interface GitHubChecks { check_runs: Array<{ status: string; conclusion: string | null }> }
 
-function githubSettings() {
-  const token = process.env.GITHUB_TOKEN?.trim();
+function githubSettings(connection: ReviewConnection) {
+  const token = connection.github.token;
   if (!token) throw new Error('Set GITHUB_TOKEN for local GitHub access');
-  const raw = process.env.GITHUB_API_URL?.trim() || 'https://api.github.com';
+  const raw = connection.github.apiUrl;
   const url = new URL(raw);
   if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('GITHUB_API_URL must be an HTTPS base URL without credentials');
-  return { base: url.toString().replace(/\/$/, ''), token, owner: process.env.GITHUB_OWNER?.trim() || null,
-    selected: process.env.GITHUB_REPOS?.split(',').map((name) => name.trim().toLowerCase()).filter(Boolean) ?? [] };
+  return { base: url.toString().replace(/\/$/, ''), token, owner: connection.github.owner || null,
+    selected: connection.github.repos.split(',').map((name) => name.trim().toLowerCase()).filter(Boolean) };
 }
 
 async function githubGet<T>(base: string, token: string, endpoint: string): Promise<{ body: T; next: boolean }> {
@@ -59,8 +60,8 @@ function pipeline(status: GitHubStatus | null, checks: GitHubChecks | null): { s
   return { status: null, known: true };
 }
 
-async function loadGitHub(_root: string, staleAfterDays: number): Promise<ReviewSnapshot> {
-  const { base, token, owner: configuredOwner, selected } = githubSettings();
+async function loadGitHub(_root: string, staleAfterDays: number, connection: ReviewConnection): Promise<ReviewSnapshot> {
+  const { base, token, owner: configuredOwner, selected } = githubSettings(connection);
   const viewerRaw = (await githubGet<GitHubPerson>(base, token, '/user')).body;
   if (!viewerRaw.login) throw new Error('GitHub did not return a current username');
   const viewer = person(viewerRaw);

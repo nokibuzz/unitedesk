@@ -4,6 +4,8 @@ import type { ThemeMode } from '../../app/useTheme';
 import type { Mapping, Role } from '../sprint/types';
 import type { TeamSettings } from './types';
 import UsefulLinksSettings from './UsefulLinksSettings';
+import CodeReviewSettings from './CodeReviewSettings';
+import { apiFetch } from '../../app/api';
 import './settings.css';
 
 type SettingsTab = 'personal' | 'team';
@@ -26,6 +28,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   mode: ThemeMode; onModeChange: (mode: ThemeMode) => void;
   defaultSection: MainSection; onDefaultSectionChange: (section: MainSection) => void;
 }) {
+  const demo = import.meta.env.MODE === 'demo';
   const [tab, setTab] = useState<SettingsTab>(() => window.location.hash === '#/settings/team' ? 'team' : 'personal');
   const [team, setTeam] = useState<TeamDraft | null>(null);
   const [mapping, setMapping] = useState<Mapping | null>(null);
@@ -45,11 +48,11 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/settings/team', { signal: controller.signal }).then((response) => responseBody<{ settings: TeamSettings }>(response))
+    apiFetch('/api/settings/team', { signal: controller.signal }).then((response) => responseBody<{ settings: TeamSettings }>(response))
       .then((body) => { setTeam(toDraft(body.settings)); setTeamError(''); })
       .catch((reason: unknown) => { if (!controller.signal.aborted) setTeamError(reason instanceof Error ? reason.message : 'Could not load team settings'); })
       .finally(() => { if (!controller.signal.aborted) setTeamLoading(false); });
-    fetch('/api/ticketing/status-mapping', { signal: controller.signal }).then((response) => responseBody<Mapping>(response))
+    apiFetch('/api/ticketing/status-mapping', { signal: controller.signal }).then((response) => responseBody<Mapping>(response))
       .then((body) => { setMapping(body); setMappingError(''); })
       .catch((reason: unknown) => { if (!controller.signal.aborted) setMappingError(reason instanceof Error ? reason.message : 'Could not discover ticket statuses'); })
       .finally(() => { if (!controller.signal.aborted) setMappingLoading(false); });
@@ -60,7 +63,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
     setSavingTeam(true); setTeamError(''); setTeamNotice('');
     try {
       const settings: TeamSettings = { ...team, dailyCutoffHour: Number(team.dailyCutoffHour), dailyTicketSeconds: Number(team.dailyTicketSeconds), gitlabStaleDays: Number(team.gitlabStaleDays) };
-      const body = await responseBody<{ settings: TeamSettings }>(await fetch('/api/settings/team', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings }) }));
+      const body = await responseBody<{ settings: TeamSettings }>(await apiFetch('/api/settings/team', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings }) }));
       setTeam(toDraft(body.settings)); setTeamNotice('Team settings saved. Sprint and Review Queue will use these values on the next visit or refresh.');
     } catch (reason) { setTeamError(reason instanceof Error ? reason.message : 'Could not save team settings'); }
     finally { setSavingTeam(false); }
@@ -69,7 +72,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
     if (!mapping) return;
     setSavingMapping(true); setMappingError(''); setMappingNotice('');
     try {
-      const body = await responseBody<Mapping>(await fetch('/api/ticketing/status-mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statuses: mapping.statuses.map(({ id, role }) => ({ id, role })) }) }));
+      const body = await responseBody<Mapping>(await apiFetch('/api/ticketing/status-mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statuses: mapping.statuses.map(({ id, role }) => ({ id, role })) }) }));
       setMapping(body); setMappingNotice('Ticket status mapping confirmed.');
     } catch (reason) { setMappingError(reason instanceof Error ? reason.message : 'Could not confirm ticket status mapping'); }
     finally { setSavingMapping(false); }
@@ -95,6 +98,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
           <div className="settings-field"><span className="settings-label">Default section</span><div className="settings-choice-group" role="group" aria-label="Default section"><button type="button" aria-pressed={defaultSection === 'sprint'} className={defaultSection === 'sprint' ? 'selected' : ''} onClick={() => onDefaultSectionChange('sprint')}>Sprint</button><button type="button" aria-pressed={defaultSection === 'reviews'} className={defaultSection === 'reviews' ? 'selected' : ''} onClick={() => onDefaultSectionChange('reviews')}>Review Queue</button><button type="button" aria-pressed={defaultSection === 'documents'} className={defaultSection === 'documents' ? 'selected' : ''} onClick={() => onDefaultSectionChange('documents')}>Knowledge</button></div></div>
         </div>
       </div> : <div className="settings-stack">
+        {demo ? <p className="settings-demo-note" role="status">Team settings are shown as examples in this public demo. Install UniteDesk to connect your tools and save shared settings.</p> : null}
         <div className="settings-card"><div className="settings-card-heading"><div><h2>Team workflow</h2><p>These values apply to everyone using this local workspace.</p></div><span className="settings-scope">Shared</span></div>
           {teamError ? <div className="sprint-alert" role="alert">{teamError}</div> : null}
           {teamNotice ? <p className="settings-success" role="status">{teamNotice}</p> : null}
@@ -104,7 +108,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
               <label className="settings-input"><span>Seconds per ticket</span><input required type="number" min="15" max="900" step="1" value={team.dailyTicketSeconds} onChange={(event) => updateTeam('dailyTicketSeconds', event.target.value)} /><small>Daily presentation timer.</small></label>
               <label className="settings-input"><span>MR aging threshold</span><input required type="number" min="0.5" max="365" step="0.5" value={team.gitlabStaleDays} onChange={(event) => updateTeam('gitlabStaleDays', event.target.value)} /><small>Calendar days before an open MR is marked aging.</small></label>
               <label className="settings-input settings-full"><span>Testing task name</span><input required maxLength={100} value={team.jiraTestTaskName} onChange={(event) => updateTeam('jiraTestTaskName', event.target.value)} /><small>Used to identify a ticket's testing subtask.</small></label>
-            </div><button className="settings-save" type="submit" disabled={savingTeam}>{savingTeam ? 'Saving…' : 'Save team workflow'}</button>
+            </div><button className="settings-save" type="submit" disabled={savingTeam || demo}>{savingTeam ? 'Saving…' : 'Save team workflow'}</button>
           </form> : null}
         </div>
         <div className="settings-card"><div className="settings-card-heading"><div><h2>Ticket status mapping</h2><p>Review the roles discovered from the connected ticketing tool.</p></div><span className="settings-scope">Shared</span></div>
@@ -112,11 +116,12 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
           {mappingNotice ? <p className="settings-success" role="status">{mappingNotice}</p> : null}
           {mappingLoading ? <p className="muted">Discovering ticket statuses…</p> : mapping ? <><div className="settings-mapping-meta"><span className="source-badge">{mapping.confirmed ? 'Confirmed' : 'Review needed'}</span><span>New statuses require another confirmation.</span></div>
             <div className="settings-mapping-list">{mapping.statuses.map((status) => <label key={status.id}><span><strong>{status.name}</strong><small>{status.category}</small></span><select value={status.role} onChange={(event) => { setMapping((current) => current ? { ...current, confirmed: false, statuses: current.statuses.map((item) => item.id === status.id ? { ...item, role: event.target.value as Role } : item) } : null); setMappingNotice(''); }}>{Object.entries(roleLabels).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>)}</div>
-            <button className="settings-save" type="button" onClick={saveMapping} disabled={savingMapping || !mapping.statuses.length}>{savingMapping ? 'Saving…' : 'Confirm status mapping'}</button>
+            <button className="settings-save" type="button" onClick={saveMapping} disabled={savingMapping || !mapping.statuses.length || demo}>{savingMapping ? 'Saving…' : 'Confirm status mapping'}</button>
           </> : null}
         </div>
         <UsefulLinksSettings />
-        <div className="settings-card"><div className="settings-card-heading"><div><h2>Connections</h2><p>Provider addresses and access tokens are set in the server's private <code>.env</code> file. Restart the server after changing them.</p></div><span className="settings-scope">Server</span></div></div>
+        <CodeReviewSettings />
+        <div className="settings-card"><div className="settings-card-heading"><div><h2>Other connections</h2><p>Ticketing and documentation provider addresses and access tokens are set in the server's private <code>.env</code> file. Restart the server after changing them.</p></div><span className="settings-scope">Server</span></div></div>
       </div>}
     </div>
   </section>;

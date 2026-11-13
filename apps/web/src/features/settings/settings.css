@@ -46,6 +46,9 @@
 .settings-links-empty { margin: 0 0 22px; color: var(--text-muted); font-size: 13px; }
 .settings-links-form { padding-top: 20px; border-top: 1px solid var(--border); }
 #useful-links-settings { scroll-margin-top: 24px; }
+.settings-connection-fields { margin-top: 22px; }
+.settings-connection-note { margin: 20px 0 0; color: var(--text-muted); font-size: 13px; }
+.settings-demo-note { margin: 0; padding: 12px 15px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text-muted); font-size: 13px; }
 .settings-links-form h3 { margin: 0 0 17px; font-size: 14px; }
 .settings-links-form-actions { display: flex; align-items: baseline; gap: 8px; }
 .settings-optional { color: var(--text-muted); font-weight: 400; }
