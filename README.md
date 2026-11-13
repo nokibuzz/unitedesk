@@ -1,12 +1,12 @@
 # UniteDesk
 
-One place for your team's work. The app has light and dark themes, Jira and GitLab views, and separate personal and team settings.
+One place for your team's work. The app has light and dark themes, ticketing and code review views, and separate personal and team settings.
 
 ## Project direction
 
-UniteDesk is an open source workspace for teams that use several tools to manage work. Read-only Jira and GitLab views are available now. Planned integrations include Notion and Linear for work items, GitHub for code, Confluence for documentation, and Teams and Slack for notifications. The application keeps links to original records and exposes only the actions supported by each connected tool.
+UniteDesk is an open source workspace for teams that use several tools to manage work. Jira and Linear feed the ticketing view; GitLab and GitHub feed the Review Queue. A Confluence document listing is available through the API, with a UI planned later. Planned integrations include Notion for work items and Teams and Slack for notifications. The application keeps links to original records and exposes only the actions supported by each connected tool.
 
-The current version includes a read-only active sprint view with Overview, Development, and Testing views, a daily presentation mode, and a GitLab Review Queue. Both integrations can use local mock data. Jira actions and user authentication are not implemented yet.
+The current version includes a read-only active sprint or cycle view with Overview, Development, and Testing views, a daily presentation mode, and a Review Queue for merge or pull requests. The ticketing and review views can use local mock data. Provider actions and user authentication are not implemented yet.
 
 ## Requirements
 
@@ -24,13 +24,13 @@ npm run dev
 Open <http://localhost:5173>. The API health endpoint is available through the web development server at <http://localhost:5173/api/health>.
 To change the API port, copy `.env.example` to `.env` and edit `PORT`; the development proxy follows the same setting.
 
-For provider setup, token guidance, and a local validation checklist, see [Connecting your tools](docs/integrations.md). Jira and GitLab are the only live connectors today. Confluence, GitHub, and Linear are documented as planned connectors so their accounts can be prepared without implying that their data appears in UniteDesk yet.
+For provider setup, token guidance, and a local validation checklist, see [Connecting your tools](docs/integrations.md). Choose a ticketing and code review provider in your private `.env`; the current views work with the selected adapters.
 
 ### Settings
 
 Use the button in the top-right corner to open **Settings**. **Personal** contains the theme (system, light, or dark) and the default section opened by the UniteDesk logo. These choices are stored in the current browser.
 
-**Team** contains the daily time zone, previous daily hour, presentation timer, Jira testing task name, MR aging threshold, and Jira status mapping. Team workflow values are saved in the local `data/team-settings.json`; confirmed status roles are saved in `data/jira-status-mapping.json`. The `data/` directory is ignored by Git. Values in `.env` supply defaults until team workflow values are saved from Settings. Connection URLs and tokens remain in the private `.env`. Settings changes are accepted only from the local machine while authentication is not implemented.
+**Team** contains the daily time zone, previous daily hour, presentation timer, testing task name, review aging threshold, and ticket status mapping. Team workflow values are saved in the local `data/team-settings.json`; confirmed status roles are saved per provider in `data/ticket-status-mapping.json`. Existing Jira confirmations are migrated from the older local file when saved. The `data/` directory is ignored by Git. Values in `.env` supply defaults until team workflow values are saved from Settings. Connection URLs and tokens remain in the private `.env`. Settings changes are accepted only from the local machine while authentication is not implemented.
 
 ### Mock Jira data
 
@@ -40,9 +40,9 @@ The same command creates `mock/gitlab/merge-requests.json` with a sample viewer 
 
 ### Read from Jira locally
 
-Copy `.env.example` to `.env`, then set `JIRA_MODE=jira`, `JIRA_BOARD_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`. A full Jira board URL supplies both the site address and board ID; `JIRA_URL` and `JIRA_BOARD_ID` are optional overrides. The app reads board statuses, the active sprint, issues, and status changelogs. Leave `HOST=127.0.0.1` while authentication is absent.
+Copy `.env.example` to `.env`, then set `TICKETING_PROVIDER=jira`, `JIRA_BOARD_URL`, `JIRA_EMAIL`, and `JIRA_API_TOKEN`. A full Jira board URL supplies both the site address and board ID; `JIRA_URL` and `JIRA_BOARD_ID` are optional overrides. The app reads board statuses, the active sprint, issues, and status changelogs. Set `TICKETING_PROVIDER=linear`, `LINEAR_TEAM`, and `LINEAR_API_KEY` to read an active Linear cycle through the same views. Leave `HOST=127.0.0.1` while authentication is absent.
 
-The status mapping section in **Settings → Team** discovers the board's statuses and proposes roles. Review and confirm them before relying on the Development and Testing views. If Jira adds a status, confirmation is requested again. The status age columns use elapsed calendar time from Jira changelog transitions, including nights and weekends. A dash means the transition time could not be verified. Test task waiting time starts at task creation and stops when testing begins; testing time sums the intervals spent in testing. Missing changelog permissions may leave those columns empty.
+The status mapping section in **Settings → Team** discovers statuses from the selected ticketing provider and proposes roles. Review and confirm them before relying on the Development and Testing views. If the provider adds a status, confirmation is requested again. The status age columns use elapsed calendar time from provider status history, including nights and weekends. A dash means the transition time could not be verified. Test task waiting time starts at task creation and stops when testing begins; testing time sums the intervals spent in testing. Missing history permissions may leave those columns empty.
 
 ### Daily mode
 
@@ -50,11 +50,19 @@ Select **Start daily** above the sprint. Daily mode presents tickets one at a ti
 
 Set the daily time zone, previous daily hour, and ticket timer in **Settings → Team**. The `.env` defaults are `UTC`, `10`, and `180` seconds. Recap additions require Jira sprint changelog data. If Jira does not expose that transition, the ticket is omitted from the “added” recap rather than being guessed from its creation date.
 
-### Review Queue from GitLab
+### Review Queue from GitLab or GitHub
 
-Open **Review Queue** in the header. It shows open merge requests for one GitLab group and its subgroups, with project, branches, author, reviewers, pipeline, approval state, and age. The quick views show all open requests, your requests, requests waiting for your review, and aging requests. Search and filters can be combined by author, reviewer, project, target branch, pipeline, and approval state.
+Open **Review Queue** in the header. It shows open GitLab merge requests or GitHub pull requests, with project, branches, author, reviewers, pipeline, approval state, and age. The quick views show all open requests, your requests, requests waiting for your review, and aging requests. Search and filters can be combined by author, reviewer, project, target branch, pipeline, and approval state.
 
-For live data, set `GITLAB_MODE=gitlab`, `GITLAB_URL`, `GITLAB_GROUP` (full group path), and `GITLAB_TOKEN` in your private `.env`. The token is used by the server and is not sent to the browser. Use a personal token when **My merge requests** and **For my review** should reflect your account. The latter includes a request when GitLab reports it as unapproved and the viewer is an assigned reviewer or an eligible approver for a required approval. Approval and pipeline fields show an unavailable state if GitLab does not return them. Set the calendar-day aging threshold in **Settings → Team**; `GITLAB_CACHE_TTL_MS` sets the live read cache duration. Keep `HOST=127.0.0.1` while the app has no authentication.
+For GitLab, set `CODE_REVIEW_PROVIDER=gitlab`, `GITLAB_URL`, `GITLAB_GROUP` (full group path), and `GITLAB_TOKEN`. For GitHub, set `CODE_REVIEW_PROVIDER=github` and `GITHUB_TOKEN`; `GITHUB_OWNER` defaults to the authenticated user, and `GITHUB_REPOS` optionally limits the scan. Tokens are used by the server and are not sent to the browser. Approval and pipeline fields show an unavailable state if a provider does not return them. Set the calendar-day aging threshold in **Settings → Team**; `GITLAB_CACHE_TTL_MS` sets the live read cache duration for either provider. Keep `HOST=127.0.0.1` while the app has no authentication.
+
+### Confluence documents API
+
+Set `CONFLUENCE_URL`, `CONFLUENCE_EMAIL`, and `CONFLUENCE_API_TOKEN` in `.env`, then call `GET /api/documents`. It lists global spaces and their pages with source links. Set `CONFLUENCE_SPACE_KEYS` to a comma-separated list to include only chosen spaces or an explicitly selected personal space. A document UI is planned.
+
+### Live integration smoke test
+
+After adding local test credentials and synthetic records for all five providers, run `npm run test:live`. It checks Jira, Linear, GitLab, GitHub, and Confluence in sequence and prints only counts, not URLs or tokens. The test requires an active Jira sprint, an active Linear cycle, open merge and pull requests, and at least one Confluence page.
 
 ## Build and run
 

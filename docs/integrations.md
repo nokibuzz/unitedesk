@@ -1,75 +1,104 @@
 # Connecting your tools
 
-UniteDesk currently reads Jira Cloud active sprints and GitLab group merge requests. Confluence, GitHub, and Linear connectors are planned. Their accounts can be checked now, but adding a token for them will not make their data appear in the app. No provider connection can be completed from Settings yet; automatic discovery and a guided confirmation flow are planned.
+UniteDesk uses provider adapters so the same ticketing, daily, and review views work with different services. Today `TICKETING_PROVIDER` accepts `mock`, `jira`, or `linear`; `CODE_REVIEW_PROVIDER` accepts `mock`, `gitlab`, or `github`. A Confluence document adapter serves `GET /api/documents`. Its UI and automatic connection setup are planned. The older `JIRA_MODE` and `GITLAB_MODE` variables still work when the corresponding provider selector is absent.
 
-Use synthetic data in a test workspace. Keep all tokens in the local, ignored `.env` file and keep `HOST=127.0.0.1`. The API has no user authentication, so it must not be exposed to a network. The `.env`, `mock/`, and `data/` paths are ignored by Git. Never paste a token into an issue, screenshot, commit, or browser console.
+Use synthetic data in a test workspace. Keep tokens in the local, ignored `.env` file and keep `HOST=127.0.0.1`. The API has no user authentication and must not be exposed to a network. The `.env`, `mock/`, and `data/` paths are ignored by Git. Never paste a token into an issue, screenshot, commit, or browser console.
 
-## Local start
+## Local start and mock data
 
 ```bash
 npm install
 cp .env.example .env
+npm run mock:seed
 npm run build
 npm start
 ```
 
-Open <http://127.0.0.1:3001>. For development with hot reload, use `npm run dev` and open <http://localhost:5173>. If you want to work without provider accounts, run `npm run mock:seed` and leave `JIRA_MODE=mock` and `GITLAB_MODE=mock` in `.env`.
+Open <http://127.0.0.1:3001>. For hot reload, use `npm run dev` and <http://localhost:5173>. Leave both provider selectors set to `mock` to test without external accounts. Restart the API after changing `.env`.
 
-## Jira Cloud: available now
+## Jira Cloud
 
-1. Create a Jira Scrum board with an active sprint and a few test issues. Include issues in different workflow statuses and, if useful, a subtask with the name configured by `JIRA_TEST_TASK_NAME`.
-2. Copy the full board URL from Jira. An example shape is `https://your-team.atlassian.net/jira/software/projects/DEMO/boards/1`.
-3. In your [Atlassian account API token settings](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/), create a short-lived token. **Current limitation:** the Jira connector uses Basic authentication at the site URL, so it needs an API token **without scopes**. Scoped tokens use a different `api.atlassian.com/ex/jira/{cloudId}` URL, which this version does not support. This token inherits the account's Jira permissions; use a dedicated test account and revoke the token after testing. Future OAuth or scoped-token support should replace this setup.
-4. Put the following values in your private `.env`:
+1. Create a Scrum board with an active sprint and issues in several statuses. Add a testing subtask if you want to exercise the Testing view. Its name comes from `JIRA_TEST_TASK_NAME` or **Settings → Team**.
+2. Copy the full board URL, such as `https://your-team.atlassian.net/jira/software/projects/DEMO/boards/1`.
+3. Create a short-lived token in [Atlassian account API token settings](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/). The current site-URL Basic authentication needs an API token **without scopes**. Scoped tokens require the `api.atlassian.com/ex/jira/{cloudId}` URL, which this adapter does not yet support. Use a dedicated test account because an unscoped token inherits its Jira permissions.
+4. Put these values in your private `.env`:
 
 ```dotenv
-JIRA_MODE=jira
+TICKETING_PROVIDER=jira
 JIRA_BOARD_URL=https://your-team.atlassian.net/jira/software/projects/DEMO/boards/1
 JIRA_EMAIL=you@example.com
 JIRA_API_TOKEN=your-local-token
 ```
 
-`JIRA_URL` and `JIRA_BOARD_ID` can override the values inferred from the board URL. Restart the API after changing `.env`. Open **Active Sprint**. In **Settings → Team → Jira status mapping**, inspect the discovered statuses and confirm their roles. Confirmation is required again when the board gains a new status. The **Development** and **Testing** views, status durations, and **Daily** mode then use the live sprint. Jira is read only in this version; changing a status from UniteDesk is planned.
+`JIRA_URL` and `JIRA_BOARD_ID` can override values inferred from the board URL. Open the Sprint view and confirm the proposed status roles in **Settings → Team → Ticket status mapping**. The app reads issues, subtasks, and status changelogs; it does not change Jira issues. A dash in a duration column means the start of that interval could not be verified. Story points and estimates are empty if Jira does not expose or populate those fields; `JIRA_STORY_POINTS_FIELD` can name a custom field ID.
 
-If the sprint is empty, check that it is active and the board contains the issues. If status or testing durations show a dash, check access to issue changelogs. Story points and estimates may be empty when Jira does not expose or populate the relevant fields. The optional `JIRA_STORY_POINTS_FIELD` setting is available for a custom field ID.
+## Linear
 
-## GitLab: available now
-
-1. Create or choose a GitLab group, a project inside it, and one or more merge requests. The Review Queue includes the group and its subgroups.
-2. In [GitLab personal access tokens](https://docs.gitlab.com/user/profile/personal_access_tokens/), create a short-lived token with the [`read_api` scope](https://docs.gitlab.com/security/tokens/access_token_scopes/). A personal token lets **My merge requests** and **For my review** reflect the token owner. A group or project token may give different viewer results.
-3. Put the values in `.env` and restart the API:
+1. Create a team and enable **Cycles** in its team settings. The Sprint view uses the cycle whose start and end dates contain the current time. Put a few issues in that cycle, including different statuses and an optional `Test the solution` subissue.
+2. Create a personal API key with only **Read** permission in **Settings → Account → Security & access**. Linear [documents API key permissions](https://linear.app/docs/api-and-webhooks) and [GraphQL authentication](https://linear.app/developers/graphql).
+3. Put the team identifier and key in `.env`:
 
 ```dotenv
-GITLAB_MODE=gitlab
+TICKETING_PROVIDER=linear
+LINEAR_TEAM=DEMO
+LINEAR_API_KEY=your-local-read-key
+```
+
+The same Overview, Development, Testing, and Daily views now read the active Linear cycle. The adapter uses Linear state spans for time in status and testing duration and keeps links to original issues. Status confirmations are stored separately from Jira confirmations. The recap does not yet report when an issue was added to a Linear cycle, because this adapter does not read cycle-assignment history. For a distributed integration, [Linear recommends OAuth 2.0](https://linear.app/developers/oauth-2-0-authentication) instead of personal keys.
+
+## GitLab
+
+1. Create or choose a GitLab group, a project inside it, and at least one open merge request. The Review Queue includes the group and its subgroups.
+2. Create a short-lived [personal access token](https://docs.gitlab.com/user/profile/personal_access_tokens/) with the [`read_api` scope](https://docs.gitlab.com/security/tokens/access_token_scopes/). A personal token lets **My changes** and **For my review** reflect its owner.
+3. Add these values to `.env`:
+
+```dotenv
+CODE_REVIEW_PROVIDER=gitlab
 GITLAB_URL=https://gitlab.com
 GITLAB_GROUP=your-group
 GITLAB_TOKEN=your-local-token
 ```
 
-Open **Review Queue**. Check the project, author, branches, draft state, pipeline, and approval fields. Pipeline and approval states may be unavailable if GitLab does not return them. A single-user test group cannot prove the **For my review** filter: add a second reviewer to a synthetic merge request when you need to validate that workflow. No merge request is approved or changed by UniteDesk.
+Open **Review Queue** and check project, author, branches, draft state, pipeline, approval, and filters. A single-user test group cannot prove the **For my review** filter; use a second reviewer on a synthetic merge request for that case. UniteDesk does not approve or change merge requests.
 
-## Confluence Cloud: connector planned
+## GitHub
 
-Confluence pages are not shown in UniteDesk yet. To prepare a test space, create a space and a synthetic page on the same Atlassian site. Confirm that the account can read the page through the Confluence UI or REST API. Atlassian [documents API token authentication](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/) and the [Confluence REST API](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/). Do not add a Confluence token to `.env` yet: there is no `CONFLUENCE_*` configuration in the current app. The future connector should discover spaces and let the team select which ones to show.
+1. Create a short-lived [fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) limited to the repositories you want to read. Grant the read permissions required by repository discovery, pull requests, reviews, commit statuses, and checks. The token owner must be able to see the chosen repositories.
+2. Configure `.env`:
 
-## GitHub: connector planned
+```dotenv
+CODE_REVIEW_PROVIDER=github
+GITHUB_TOKEN=your-local-token
+GITHUB_OWNER=your-user-or-organization
+# Optional: restrict the automatic repository scan.
+GITHUB_REPOS=your-user-or-organization/first-repo,second-repo
+```
 
-GitHub access to a repository can be checked through its website or `gh repo view OWNER/REPO` after `gh auth login`. This checks the account, not a UniteDesk integration. There are no `GITHUB_*` settings today. For a future local proof of concept, use a [fine-grained personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens) limited to selected repositories and required read permissions. For distribution to other teams, a [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) is the intended direction because installations can be limited to chosen repositories and permissions.
+If `GITHUB_OWNER` is empty, UniteDesk uses the authenticated user. If `GITHUB_REPOS` is empty, it scans accessible, non-archived repositories owned by that user or organization. The same Review Queue filters apply to open pull requests. GitHub's required approval count is not read yet: **Approved** currently means at least one current approval, and the required count is shown as unavailable. Pipeline status uses checks and commit statuses when accessible. A [GitHub App](https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps) is the intended authentication path for other teams.
 
-## Linear: connector planned
+## Confluence Cloud
 
-Linear is not connected to UniteDesk yet. A test workspace and a few synthetic issues can be prepared, but there is no `LINEAR_*` setting or automatic workflow mapping today. Linear's [GraphQL API](https://linear.app/developers/graphql) supports personal API keys for local experiments; [OAuth 2.0](https://linear.app/developers/oauth-2-0-authentication) is recommended for an integration used by other teams. Wait for the connector before creating a key solely for UniteDesk.
+Create a test space and a synthetic page, then configure the read-only document listing:
+
+```dotenv
+DOCUMENTATION_PROVIDER=confluence
+CONFLUENCE_URL=https://your-team.atlassian.net
+CONFLUENCE_EMAIL=you@example.com
+CONFLUENCE_API_TOKEN=your-local-token
+# Optional: comma-separated keys; blank scans global spaces, not personal spaces.
+CONFLUENCE_SPACE_KEYS=DEMO
+```
+
+Call `GET /api/documents`. It returns spaces and pages with original Confluence links. There is no document UI yet. The adapter uses the [Confluence REST API](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/). Like the current Jira adapter, site-URL Basic authentication needs an unscoped Atlassian token; OAuth or scoped-token support is planned.
 
 ## Validation checklist
 
-| Area | What to verify | Current result expected |
-| --- | --- | --- |
-| Local API | `/api/health` returns `ok` | Available |
-| Jira | `/api/sprint/active` returns `source: jira`, an active sprint, ticket descriptions, original links, subtasks, and durations where changelogs exist | Available |
-| Jira mapping | `/api/jira/status-mapping` discovers statuses; confirmation persists in ignored `data/` | Available |
-| GitLab | `/api/merge-requests` returns `source: gitlab` and open MRs from the chosen group | Available |
-| Confluence | Account can read a synthetic page through Confluence | Account readiness only |
-| GitHub | Account can read a chosen repository | Account readiness only |
-| Linear | Test workspace and issues can be opened in Linear | Account readiness only |
+| Area | Local check |
+| --- | --- |
+| API | `GET /api/health` returns `ok` |
+| Jira or Linear | `GET /api/sprint/active` returns the selected `source`, active sprint or cycle, descriptions, original links, subtasks, and durations where history exists |
+| Status mapping | `GET /api/ticketing/status-mapping` discovers roles; confirmation in Settings persists per provider in ignored `data/` |
+| GitLab or GitHub | `GET /api/merge-requests` returns the selected `source` and open changes; Review Queue filters still work |
+| Confluence | `GET /api/documents` returns the selected space and synthetic page |
 
-Run `npm run typecheck`, `npm test`, and `npm run build` before publishing code changes. Check `git status --short` and `git check-ignore -v .env` before any push. After a temporary test, revoke the Jira and GitLab tokens in their provider settings and remove them from `.env`.
+Run `npm run typecheck`, `npm test`, and `npm run build` before publishing code changes. With all five providers configured in your private `.env`, run `npm run test:live`; it requires an active Jira sprint, an active Linear cycle, open merge and pull requests, and a Confluence page. The output contains only provider names and record counts. Check `git status --short` and `git check-ignore -v .env` before any push. Revoke temporary tokens in each provider after testing and remove them from `.env`.

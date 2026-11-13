@@ -23,6 +23,10 @@
     "test:daily": "node --import tsx --test apps/api/src/sprint/daily.test.ts",
     "test:reviews": "node --import tsx --test apps/api/src/merge-requests/service.test.ts apps/web/tests/review-filter.test.ts",
     "test:settings": "node --import tsx --test apps/api/src/settings/team.test.ts",
-    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings"
+    "test:linear": "node --import tsx --test apps/api/src/sprint/linear.test.ts",
+    "test:github": "node --import tsx --test apps/api/src/merge-requests/github.test.ts",
+    "test:confluence": "node --import tsx --test apps/api/src/documents/confluence.test.ts",
+    "test:live": "npm run build && node scripts/test-live-integrations.mjs",
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:linear && npm run test:github && npm run test:confluence"
   }
 }
