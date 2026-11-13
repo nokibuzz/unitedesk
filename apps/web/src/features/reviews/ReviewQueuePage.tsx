@@ -48,6 +48,7 @@ export default function ReviewQueuePage() {
   const [approval, setApproval] = useState<ApprovalFilter>('all');
   const [sort, setSort] = useState<Sort>('oldest');
   const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -74,6 +75,16 @@ export default function ReviewQueuePage() {
     { id: 'review', label: 'For my review', count: items.filter((item) => item.waitingForMe).length },
     { id: 'aging', label: 'Aging', count: items.filter((item) => item.aging).length },
   ];
+  const activeFilters = [
+    author && { label: `Author: @${author}`, clear: () => setAuthor('') },
+    reviewer && { label: `Reviewer: @${reviewer}`, clear: () => setReviewer('') },
+    project && { label: `Project: ${project}`, clear: () => setProject('') },
+    target && { label: `Target: ${target}`, clear: () => setTarget('') },
+    pipeline && { label: `Pipeline: ${pipelineLabel(pipeline === 'none' ? null : pipeline, pipeline !== 'unavailable')}`, clear: () => setPipeline('') },
+    approval !== 'all' && { label: `Approval: ${{ needed: 'Unapproved', approved: 'Approved', unknown: 'Unavailable' }[approval]}`, clear: () => setApproval('all') },
+    sort !== 'oldest' && { label: `Sort: ${sort === 'newest' ? 'Newest first' : 'Recently updated'}`, clear: () => setSort('oldest') },
+  ].filter((filter): filter is { label: string; clear: () => void } => Boolean(filter));
+  const hasFilters = Boolean(search) || activeFilters.length > 0;
   function resetFilters() { setSearch(''); setAuthor(''); setReviewer(''); setProject(''); setTarget(''); setPipeline(''); setApproval('all'); setSort('oldest'); setPage(1); }
   return <section className="reviews-page" aria-labelledby="reviews-heading">
     <div className="sprint-heading-row"><div><div className="eyebrow"><span className="eyebrow-dot" /> Code / GitLab</div><h1 id="reviews-heading" className="sprint-title">Review Queue<span className="title-period">.</span></h1><p className="sprint-description">Open changes, reviews waiting on you, and the details that move work forward.</p></div><button className="refresh-button" type="button" disabled={loading} onClick={() => setRevision((value) => value + 1)}>{loading ? 'Loading…' : 'Refresh'}</button></div>
@@ -81,7 +92,15 @@ export default function ReviewQueuePage() {
     {snapshot ? <>
       <div className="review-context"><div><span className="context-label">GitLab group</span><strong>{snapshot.group}</strong></div><div className="context-meta"><span className="source-badge">{snapshot.source === 'mock' ? 'Mock data' : 'Live GitLab'}</span><span>Viewing as @{snapshot.viewer.username}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span></div></div>
       <div className="review-views" role="group" aria-label="Merge request views">{views.map((item) => <button key={item.id} type="button" aria-pressed={view === item.id} className={view === item.id ? 'review-view active' : 'review-view'} onClick={() => { setView(item.id); setPage(1); }}><span>{item.label}</span><strong>{item.count}</strong></button>)}</div>
-      <div className="review-filters"><label className="review-search"><span>Search</span><input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Title, branch, project, or MR number" /></label>
+      <div className="review-toolbar">
+        <label className="review-search"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5.7" stroke="currentColor" strokeWidth="1.7"/><path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg><span className="sr-only">Search merge requests</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search merge requests, branches, projects…" /></label>
+        <button className="review-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="review-advanced-filters" onClick={() => setFiltersOpen((open) => !open)}>Filters{activeFilters.length ? <span className="review-filter-count">{activeFilters.length}</span> : null}<span className="review-chevron" aria-hidden="true">⌄</span></button>
+        {hasFilters ? <button className="review-clear-inline" type="button" onClick={resetFilters}>Clear all</button> : null}
+      </div>
+      {activeFilters.length ? <div className="review-active-filters" aria-label="Active filters">{activeFilters.map((filter) => <button key={filter.label} type="button" aria-label={`Remove ${filter.label}`} onClick={() => { filter.clear(); setPage(1); }}>{filter.label}<span aria-hidden="true">×</span></button>)}</div> : null}
+      <div className="review-advanced" id="review-advanced-filters" hidden={!filtersOpen}>
+        <div className="review-advanced-heading"><strong>Advanced filters</strong><span>Refine the queue by people, project, and review status.</span></div>
+        <div className="review-filters">
         <label><span>Author</span><select value={author} onChange={(event) => { setAuthor(event.target.value); setPage(1); }}><option value="">Everyone</option>{authors.map((name) => <option key={name} value={name}>@{name}</option>)}</select></label>
         <label><span>Reviewer</span><select value={reviewer} onChange={(event) => { setReviewer(event.target.value); setPage(1); }}><option value="">Everyone</option>{reviewers.map((name) => <option key={name} value={name}>@{name}</option>)}</select></label>
         <label><span>Project</span><select value={project} onChange={(event) => { setProject(event.target.value); setPage(1); }}><option value="">All projects</option>{projects.map((name) => <option key={name} value={name}>{name}</option>)}</select></label>
@@ -89,7 +108,7 @@ export default function ReviewQueuePage() {
         <label><span>Pipeline</span><select value={pipeline} onChange={(event) => { setPipeline(event.target.value); setPage(1); }}><option value="">Any status</option>{pipelines.map((name) => <option key={name} value={name}>{pipelineLabel(name === 'none' ? null : name, name !== 'unavailable')}</option>)}</select></label>
         <label><span>Approval</span><select value={approval} onChange={(event) => { setApproval(event.target.value as ApprovalFilter); setPage(1); }}><option value="all">Any status</option><option value="needed">Unapproved</option><option value="approved">Approved</option><option value="unknown">Unavailable</option></select></label>
         <label><span>Sort</span><select value={sort} onChange={(event) => { setSort(event.target.value as Sort); setPage(1); }}><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="updated">Recently updated</option></select></label>
-        <button className="review-clear" type="button" onClick={resetFilters}>Clear filters</button>
+        </div>
       </div>
       <div className="table-heading"><h2>{views.find((item) => item.id === view)?.label}</h2><span>{filtered.length} merge request{filtered.length === 1 ? '' : 's'} · Aging after {snapshot.staleAfterDays} calendar days</span></div>
       <div className="review-list">{visible.length ? visible.map((item) => <MrCard key={item.id} item={item} mock={snapshot.source === 'mock'} />) : <div className="empty-state">No merge requests match these filters.</div>}</div>

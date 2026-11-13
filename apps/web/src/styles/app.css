@@ -42,7 +42,7 @@ a:focus-visible {
 .header-content,
 .main-content,
 .site-footer {
-  width: min(100% - 48px, 1180px);
+  width: min(100% - clamp(40px, 6vw, 112px), 1880px);
   margin-inline: auto;
 }
 
@@ -253,7 +253,7 @@ h2 {
 @media (max-width: 680px) {
   .header-content,
   .main-content,
-  .site-footer { width: min(100% - 32px, 1180px); }
+  .site-footer { width: calc(100% - 32px); }
   .header-content { min-height: 72px; }
   .header-content { flex-wrap: wrap; gap: 10px; padding-block: 12px; }
   .site-nav { order: 3; width: 100%; justify-content: center; }
