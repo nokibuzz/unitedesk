@@ -5,7 +5,7 @@ import { loadEnvFile } from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { getActiveSprint, discoverStatusMapping } from '../apps/api/dist/sprint/service.js';
 import { getMergeRequests } from '../apps/api/dist/merge-requests/service.js';
-import { getDocuments } from '../apps/api/dist/documents/service.js';
+import { getDocumentPage, getDocuments, searchDocuments } from '../apps/api/dist/documents/service.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const envFile = path.join(root, '.env');
@@ -45,5 +45,13 @@ await check('confluence', async () => {
   assert.ok(snapshot.spaces.length > 0, 'no accessible spaces');
   assert.ok(snapshot.pages.length > 0, 'no test pages');
   assert.ok(snapshot.pages.every((page) => page.url.startsWith('https://')), 'missing original page link');
-  return `${snapshot.spaces.length} spaces, ${snapshot.pages.length} pages`;
+  const preview = await getDocumentPage(snapshot.pages[0].id);
+  assert.equal(preview.id, snapshot.pages[0].id);
+  assert.equal(typeof preview.html, 'string');
+  const query = process.env.CONFLUENCE_TEST_QUERY?.trim();
+  if (query) {
+    const search = await searchDocuments(query);
+    assert.ok(search.results.length > 0, 'no indexed results for the test query');
+  }
+  return `${snapshot.spaces.length} spaces, ${snapshot.pages.length} pages, preview${query ? ' and search' : ''}`;
 });

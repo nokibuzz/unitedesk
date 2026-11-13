@@ -4,7 +4,7 @@ One place for your team's work. The app has light and dark themes, ticketing and
 
 ## Project direction
 
-UniteDesk is an open source workspace for teams that use several tools to manage work. Jira and Linear feed the ticketing view; GitLab and GitHub feed the Review Queue. A Confluence document listing is available through the API, with a UI planned later. Planned integrations include Notion for work items and Teams and Slack for notifications. The application keeps links to original records and exposes only the actions supported by each connected tool.
+UniteDesk is an open source workspace for teams that use several tools to manage work. Jira and Linear feed the ticketing view; GitLab and GitHub feed the Review Queue; Confluence feeds the Knowledge tab. Planned integrations include Notion for work items and Teams and Slack for notifications. The application keeps links to original records and exposes only the actions supported by each connected tool.
 
 The current version includes a read-only active sprint or cycle view with Overview, Development, and Testing views, a daily presentation mode, and a Review Queue for merge or pull requests. The ticketing and review views can use local mock data. Provider actions and user authentication are not implemented yet.
 
@@ -56,9 +56,9 @@ Open **Review Queue** in the header. It shows open GitLab merge requests or GitH
 
 For GitLab, set `CODE_REVIEW_PROVIDER=gitlab`, `GITLAB_URL`, `GITLAB_GROUP` (full group path), and `GITLAB_TOKEN`. For GitHub, set `CODE_REVIEW_PROVIDER=github` and `GITHUB_TOKEN`; `GITHUB_OWNER` defaults to the authenticated user, and `GITHUB_REPOS` optionally limits the scan. Tokens are used by the server and are not sent to the browser. Approval and pipeline fields show an unavailable state if a provider does not return them. Set the calendar-day aging threshold in **Settings → Team**; `GITLAB_CACHE_TTL_MS` sets the live read cache duration for either provider. Keep `HOST=127.0.0.1` while the app has no authentication.
 
-### Confluence documents API
+### Knowledge from Confluence
 
-Set `CONFLUENCE_URL`, `CONFLUENCE_EMAIL`, and `CONFLUENCE_API_TOKEN` in `.env`, then call `GET /api/documents`. It lists global spaces and their pages with source links. Set `CONFLUENCE_SPACE_KEYS` to a comma-separated list to include only chosen spaces or an explicitly selected personal space. A document UI is planned.
+Set `CONFLUENCE_URL`, `CONFLUENCE_EMAIL`, and `CONFLUENCE_API_TOKEN` in `.env`, then open **Knowledge**. Browse the space and page hierarchy, search Confluence's indexed page contents in relevance order, and read a page inside UniteDesk. Every page links to its original in Confluence. Set `CONFLUENCE_SPACE_KEYS` to a comma-separated list to include only chosen spaces or an explicitly selected personal space. The API also exposes `GET /api/documents`, `GET /api/documents/search?q=...`, and `GET /api/documents/:id`. Editing remains in Confluence because its storage format can include macros and other content that a simple UniteDesk editor would overwrite.
 
 ### Live integration smoke test
 

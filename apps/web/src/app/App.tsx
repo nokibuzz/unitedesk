@@ -3,12 +3,14 @@ import { useTheme } from './useTheme';
 import { getDefaultSection, saveDefaultSection, type MainSection } from './personal';
 import SprintPage from '../features/sprint/SprintPage';
 import ReviewQueuePage from '../features/reviews/ReviewQueuePage';
+import DocumentsPage from '../features/documents/DocumentsPage';
 import SettingsPage from '../features/settings/SettingsPage';
 
 type Section = MainSection | 'settings';
 function sectionFromHash(fallback: MainSection): Section {
   if (window.location.hash === '#/sprint') return 'sprint';
   if (window.location.hash === '#/reviews') return 'reviews';
+  if (window.location.hash === '#/documents') return 'documents';
   if (window.location.hash === '#/settings') return 'settings';
   return fallback;
 }
@@ -28,11 +30,11 @@ export default function App() {
   return <div className="app-shell">
     <header className="site-header"><div className="header-content">
       <a className="brand" href={`#/${defaultSection}`} aria-label="UniteDesk home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span><span>UniteDesk</span></a>
-      <nav className="site-nav" aria-label="Main navigation"><a href="#/sprint" aria-current={section === 'sprint' ? 'page' : undefined}>Sprint</a><a href="#/reviews" aria-current={section === 'reviews' ? 'page' : undefined}>Review Queue</a></nav>
+      <nav className="site-nav" aria-label="Main navigation"><a href="#/sprint" aria-current={section === 'sprint' ? 'page' : undefined}>Sprint</a><a href="#/reviews" aria-current={section === 'reviews' ? 'page' : undefined}>Review Queue</a><a href="#/documents" aria-current={section === 'documents' ? 'page' : undefined}>Knowledge</a></nav>
       <a className="settings-link" href="#/settings" aria-label="Settings" aria-current={section === 'settings' ? 'page' : undefined} title="Settings"><SettingsIcon /></a>
     </div></header>
-    <main className="main-content sprint-main">
-      {section === 'sprint' ? <SprintPage /> : section === 'reviews' ? <ReviewQueuePage /> : <SettingsPage mode={mode} onModeChange={setMode} defaultSection={defaultSection} onDefaultSectionChange={setDefaultSection} />}
+    <main className={`main-content ${section === 'documents' ? 'documents-main' : 'sprint-main'}`}>
+      {section === 'sprint' ? <SprintPage /> : section === 'reviews' ? <ReviewQueuePage /> : section === 'documents' ? <DocumentsPage /> : <SettingsPage mode={mode} onModeChange={setMode} defaultSection={defaultSection} onDefaultSectionChange={setDefaultSection} />}
     </main>
     <footer className="site-footer"><span>UniteDesk</span><span>Built for teams, together.</span></footer>
   </div>;

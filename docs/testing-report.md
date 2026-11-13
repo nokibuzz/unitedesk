@@ -8,9 +8,9 @@ Tested on 2026-11-13 with synthetic records and local credentials. Account ident
 | Linear | Active cycle, three parent issues, six workflow statuses, testing subissue, descriptions, original links, state spans, and confirmed mapping | Pass |
 | GitLab | Group discovery and two open merge requests, including a draft; Review Queue model and filters | Pass |
 | GitHub | Automatic repository discovery and three open pull requests, including a private synthetic test; Review Queue and **For my review** filter | Pass |
-| Confluence | Selected test space and five pages, including a synthetic page with an original source link | Pass |
+| Confluence | Selected test space and seven pages, including two nested synthetic pages; indexed search returns three relevant results, and page preview loads | Pass |
 
-The browser checks confirmed that the Linear cycle appears in Overview, Development, Testing, and Daily mode, and that GitHub pull requests use the existing Review Queue. The Jira/GitLab combination and the Linear/GitHub combination both returned successful application API responses. All unit tests, type checks, and the production build passed.
+The browser checks confirmed that the Linear cycle appears in Overview, Development, Testing, and Daily mode, that GitHub pull requests use the existing Review Queue, and that the Knowledge tab browses nested Confluence pages, searches, and previews content. The Jira/GitLab combination and the Linear/GitHub combination both returned successful application API responses. All unit tests, type checks, and the production build passed.
 
 ## Limits of this test
 
@@ -19,5 +19,5 @@ The browser checks confirmed that the Linear cycle appears in Overview, Developm
 - GitHub does not yet read required approval thresholds; an approval means at least one current approving review.
 - GitHub's **For my review** filter uses directly requested reviewers. Requests assigned to a reviewer team are not resolved to individual team members yet.
 - Linear cycle-assignment history is not yet read, so Daily recap does not report when issues were added to a cycle. Status age uses Linear state history.
-- Confluence is exposed through `/api/documents`; a document UI is not implemented yet.
+- Confluence previews omit active macros, images, and embedded apps. Inline editing is deferred so a simplified editor cannot overwrite Confluence storage content or bypass version handling; the original-page link supports editing in Confluence.
 - Jira, Linear, GitLab, GitHub, and Confluence connections remain local and read only in UniteDesk. Provider actions and hosted authentication require separate work.

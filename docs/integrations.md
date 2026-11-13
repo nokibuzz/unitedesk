@@ -1,6 +1,6 @@
 # Connecting your tools
 
-UniteDesk uses provider adapters so the same ticketing, daily, and review views work with different services. Today `TICKETING_PROVIDER` accepts `mock`, `jira`, or `linear`; `CODE_REVIEW_PROVIDER` accepts `mock`, `gitlab`, or `github`. A Confluence document adapter serves `GET /api/documents`. Its UI and automatic connection setup are planned. The older `JIRA_MODE` and `GITLAB_MODE` variables still work when the corresponding provider selector is absent.
+UniteDesk uses provider adapters so the same ticketing, daily, and review views work with different services. Today `TICKETING_PROVIDER` accepts `mock`, `jira`, or `linear`; `CODE_REVIEW_PROVIDER` accepts `mock`, `gitlab`, or `github`. The Confluence document adapter powers the **Knowledge** tab. Automatic connection setup is planned. The older `JIRA_MODE` and `GITLAB_MODE` variables still work when the corresponding provider selector is absent.
 
 Use synthetic data in a test workspace. Keep tokens in the local, ignored `.env` file and keep `HOST=127.0.0.1`. The API has no user authentication and must not be exposed to a network. The `.env`, `mock/`, and `data/` paths are ignored by Git. Never paste a token into an issue, screenshot, commit, or browser console.
 
@@ -78,7 +78,7 @@ If `GITHUB_OWNER` is empty, UniteDesk uses the authenticated user. If `GITHUB_RE
 
 ## Confluence Cloud
 
-Create a test space and a synthetic page, then configure the read-only document listing:
+Create a test space and a few synthetic pages, including nested pages, then configure the read-only documentation view:
 
 ```dotenv
 DOCUMENTATION_PROVIDER=confluence
@@ -89,7 +89,7 @@ CONFLUENCE_API_TOKEN=your-local-token
 CONFLUENCE_SPACE_KEYS=DEMO
 ```
 
-Call `GET /api/documents`. It returns spaces and pages with original Confluence links. There is no document UI yet. The adapter uses the [Confluence REST API](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/). Like the current Jira adapter, site-URL Basic authentication needs an unscoped Atlassian token; OAuth or scoped-token support is planned.
+Open **Knowledge** to browse spaces and nested pages. Type at least two characters to search pages and page contents using Confluence's relevance-ranked CQL search; **See all** opens the full Confluence search. Selecting a result reads the page here, with a link to the original page. `GET /api/documents` lists the tree, `GET /api/documents/search?q=...` returns the top 25 search results, and `GET /api/documents/:id` returns a sanitized HTML preview. Confluence macros, images, and embedded apps may not render fully in the preview; use the original page for those. Editing is done in Confluence to preserve its storage format and version history. The adapter uses the [Confluence REST API](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/). Like the current Jira adapter, site-URL Basic authentication needs an unscoped Atlassian token; OAuth or scoped-token support is planned.
 
 ## Validation checklist
 
@@ -99,6 +99,6 @@ Call `GET /api/documents`. It returns spaces and pages with original Confluence 
 | Jira or Linear | `GET /api/sprint/active` returns the selected `source`, active sprint or cycle, descriptions, original links, subtasks, and durations where history exists |
 | Status mapping | `GET /api/ticketing/status-mapping` discovers roles; confirmation in Settings persists per provider in ignored `data/` |
 | GitLab or GitHub | `GET /api/merge-requests` returns the selected `source` and open changes; Review Queue filters still work |
-| Confluence | `GET /api/documents` returns the selected space and synthetic page |
+| Confluence | **Knowledge** shows the selected space hierarchy, full-text search results, sanitized page preview, and original links |
 
-Run `npm run typecheck`, `npm test`, and `npm run build` before publishing code changes. With all five providers configured in your private `.env`, run `npm run test:live`; it requires an active Jira sprint, an active Linear cycle, open merge and pull requests, and a Confluence page. The output contains only provider names and record counts. Check `git status --short` and `git check-ignore -v .env` before any push. Revoke temporary tokens in each provider after testing and remove them from `.env`.
+Run `npm run typecheck`, `npm test`, and `npm run build` before publishing code changes. With all five providers configured in your private `.env`, run `npm run test:live`; it requires an active Jira sprint, an active Linear cycle, open merge and pull requests, and a Confluence page. It also checks a page preview. Set `CONFLUENCE_TEST_QUERY` to an indexed term in one synthetic page to include a live search check. The output contains only provider names and record counts. Check `git status --short` and `git check-ignore -v .env` before any push. Revoke temporary tokens in each provider after testing and remove them from `.env`.
