@@ -42,9 +42,9 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
       .then((body) => { setTeam(toDraft(body.settings)); setTeamError(''); })
       .catch((reason: unknown) => { if (!controller.signal.aborted) setTeamError(reason instanceof Error ? reason.message : 'Could not load team settings'); })
       .finally(() => { if (!controller.signal.aborted) setTeamLoading(false); });
-    fetch('/api/jira/status-mapping', { signal: controller.signal }).then((response) => responseBody<Mapping>(response))
+    fetch('/api/ticketing/status-mapping', { signal: controller.signal }).then((response) => responseBody<Mapping>(response))
       .then((body) => { setMapping(body); setMappingError(''); })
-      .catch((reason: unknown) => { if (!controller.signal.aborted) setMappingError(reason instanceof Error ? reason.message : 'Could not discover Jira statuses'); })
+      .catch((reason: unknown) => { if (!controller.signal.aborted) setMappingError(reason instanceof Error ? reason.message : 'Could not discover ticket statuses'); })
       .finally(() => { if (!controller.signal.aborted) setMappingLoading(false); });
     return () => controller.abort();
   }, []);
@@ -62,9 +62,9 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
     if (!mapping) return;
     setSavingMapping(true); setMappingError(''); setMappingNotice('');
     try {
-      const body = await responseBody<Mapping>(await fetch('/api/jira/status-mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statuses: mapping.statuses.map(({ id, role }) => ({ id, role })) }) }));
-      setMapping(body); setMappingNotice('Jira status mapping confirmed.');
-    } catch (reason) { setMappingError(reason instanceof Error ? reason.message : 'Could not confirm Jira status mapping'); }
+      const body = await responseBody<Mapping>(await fetch('/api/ticketing/status-mapping', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ statuses: mapping.statuses.map(({ id, role }) => ({ id, role })) }) }));
+      setMapping(body); setMappingNotice('Ticket status mapping confirmed.');
+    } catch (reason) { setMappingError(reason instanceof Error ? reason.message : 'Could not confirm ticket status mapping'); }
     finally { setSavingMapping(false); }
   }
   function updateTeam<K extends keyof TeamDraft>(key: K, value: TeamDraft[K]) {
@@ -96,19 +96,19 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
               <label className="settings-input"><span>Previous daily hour</span><input required type="number" min="0" max="23" step="1" value={team.dailyCutoffHour} onChange={(event) => updateTeam('dailyCutoffHour', event.target.value)} /><small>Hour from 0 to 23 in the selected time zone.</small></label>
               <label className="settings-input"><span>Seconds per ticket</span><input required type="number" min="15" max="900" step="1" value={team.dailyTicketSeconds} onChange={(event) => updateTeam('dailyTicketSeconds', event.target.value)} /><small>Daily presentation timer.</small></label>
               <label className="settings-input"><span>MR aging threshold</span><input required type="number" min="0.5" max="365" step="0.5" value={team.gitlabStaleDays} onChange={(event) => updateTeam('gitlabStaleDays', event.target.value)} /><small>Calendar days before an open MR is marked aging.</small></label>
-              <label className="settings-input settings-full"><span>Jira testing task name</span><input required maxLength={100} value={team.jiraTestTaskName} onChange={(event) => updateTeam('jiraTestTaskName', event.target.value)} /><small>Used to identify a ticket's testing subtask.</small></label>
+              <label className="settings-input settings-full"><span>Testing task name</span><input required maxLength={100} value={team.jiraTestTaskName} onChange={(event) => updateTeam('jiraTestTaskName', event.target.value)} /><small>Used to identify a ticket's testing subtask.</small></label>
             </div><button className="settings-save" type="submit" disabled={savingTeam}>{savingTeam ? 'Saving…' : 'Save team workflow'}</button>
           </form> : null}
         </div>
-        <div className="settings-card"><div className="settings-card-heading"><div><h2>Jira status mapping</h2><p>Review the roles discovered from the Jira board.</p></div><span className="settings-scope">Shared</span></div>
+        <div className="settings-card"><div className="settings-card-heading"><div><h2>Ticket status mapping</h2><p>Review the roles discovered from the connected ticketing tool.</p></div><span className="settings-scope">Shared</span></div>
           {mappingError ? <div className="sprint-alert" role="alert">{mappingError}</div> : null}
           {mappingNotice ? <p className="settings-success" role="status">{mappingNotice}</p> : null}
-          {mappingLoading ? <p className="muted">Discovering Jira statuses…</p> : mapping ? <><div className="settings-mapping-meta"><span className="source-badge">{mapping.confirmed ? 'Confirmed' : 'Review needed'}</span><span>New Jira statuses require another confirmation.</span></div>
+          {mappingLoading ? <p className="muted">Discovering ticket statuses…</p> : mapping ? <><div className="settings-mapping-meta"><span className="source-badge">{mapping.confirmed ? 'Confirmed' : 'Review needed'}</span><span>New statuses require another confirmation.</span></div>
             <div className="settings-mapping-list">{mapping.statuses.map((status) => <label key={status.id}><span><strong>{status.name}</strong><small>{status.category}</small></span><select value={status.role} onChange={(event) => { setMapping((current) => current ? { ...current, confirmed: false, statuses: current.statuses.map((item) => item.id === status.id ? { ...item, role: event.target.value as Role } : item) } : null); setMappingNotice(''); }}>{Object.entries(roleLabels).map(([role, label]) => <option key={role} value={role}>{label}</option>)}</select></label>)}</div>
             <button className="settings-save" type="button" onClick={saveMapping} disabled={savingMapping || !mapping.statuses.length}>{savingMapping ? 'Saving…' : 'Confirm status mapping'}</button>
           </> : null}
         </div>
-        <div className="settings-card"><div className="settings-card-heading"><div><h2>Connections</h2><p>Jira and GitLab addresses and access tokens are set in the server's private <code>.env</code> file. Restart the server after changing them.</p></div><span className="settings-scope">Server</span></div></div>
+        <div className="settings-card"><div className="settings-card-heading"><div><h2>Connections</h2><p>Provider addresses and access tokens are set in the server's private <code>.env</code> file. Restart the server after changing them.</p></div><span className="settings-scope">Server</span></div></div>
       </div>}
     </div>
   </section>;

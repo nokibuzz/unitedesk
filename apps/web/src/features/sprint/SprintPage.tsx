@@ -48,6 +48,7 @@ export default function SprintPage() {
   const testing = tickets.filter((item) => item.testing === 'ready' || item.testing === 'in_testing' || item.statusRole === 'ready_for_testing' || item.statusRole === 'in_testing');
   const visible = tab === 'development' ? development : tab === 'testing' ? testing : tickets;
   const mock = snapshot?.source === 'mock';
+  const linear = snapshot?.source === 'linear';
   const tabs: Array<{ id: Tab; name: string; count: number }> = [
     { id: 'overview', name: 'Overview', count: tickets.length },
     { id: 'development', name: 'Development', count: development.length },
@@ -55,20 +56,20 @@ export default function SprintPage() {
   ];
   return <section aria-labelledby="sprint-heading">
     <div className="sprint-heading-row"><div>
-      <div className="eyebrow"><span className="eyebrow-dot" /> Ticketing / Jira</div>
-      <h1 id="sprint-heading" className="sprint-title">Active sprint<span className="title-period">.</span></h1>
-      <p className="sprint-description">A clear view of the work your team is moving through the sprint.</p>
+      <div className="eyebrow"><span className="eyebrow-dot" /> Ticketing / {linear ? 'Linear' : snapshot?.source === 'jira' ? 'Jira' : 'Demo'}</div>
+      <h1 id="sprint-heading" className="sprint-title">Active {linear ? 'cycle' : 'sprint'}<span className="title-period">.</span></h1>
+      <p className="sprint-description">A clear view of the work your team is moving through the {linear ? 'cycle' : 'sprint'}.</p>
     </div><div className="sprint-actions"><button className="refresh-button" type="button" onClick={() => setRefresh((value) => value + 1)} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button><button className="refresh-button daily-launch" type="button" onClick={() => setDailyOpen(true)} disabled={!snapshot?.sprint || loading}>Start daily ↗</button></div></div>
     {error ? <div className="sprint-alert" role="alert">{error}</div> : null}
     {snapshot ? <>
-      <div className="sprint-context"><div><span className="context-label">Current sprint</span><strong>{snapshot.sprint?.name ?? 'No active sprint'}</strong>{snapshot.sprint?.goal ? <span className="sprint-goal">{snapshot.sprint.goal}</span> : null}</div>
-        <div className="context-meta"><span className="source-badge">{mock ? 'Mock data' : 'Live Jira'}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>{!mock && snapshot.sprint ? <a href={snapshot.sprint.url} target="_blank" rel="noreferrer">Open board ↗</a> : null}</div></div>
-      {!snapshot.statusMappingConfirmed ? <div className="sprint-alert" role="status">Jira status roles are suggestions. <a href="#/settings">Review mapping in Settings ↗</a></div> : null}
+      <div className="sprint-context"><div><span className="context-label">Current {linear ? 'cycle' : 'sprint'}</span><strong>{snapshot.sprint?.name ?? `No active ${linear ? 'cycle' : 'sprint'}`}</strong>{snapshot.sprint?.goal ? <span className="sprint-goal">{snapshot.sprint.goal}</span> : null}</div>
+        <div className="context-meta"><span className="source-badge">{mock ? 'Mock data' : linear ? 'Live Linear' : 'Live Jira'}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>{!mock && snapshot.sprint ? <a href={snapshot.sprint.url} target="_blank" rel="noreferrer">Open {linear ? 'cycle' : 'board'} ↗</a> : null}</div></div>
+      {!snapshot.statusMappingConfirmed ? <div className="sprint-alert" role="status">Status roles are suggestions. <a href="#/settings">Review mapping in Settings ↗</a></div> : null}
       <div className="sprint-stats" aria-label="Sprint ticket counts">{tabs.map((item) => <div className="stat-card" key={item.id}><span>{item.name}</span><strong>{item.count}</strong></div>)}</div>
       <div className="sprint-tabs" role="tablist" aria-label="Active sprint views">{tabs.map((item) => <button key={item.id} id={`tab-${item.id}`} type="button" role="tab" aria-selected={tab === item.id} aria-controls="sprint-tabpanel" className={tab === item.id ? 'sprint-tab active' : 'sprint-tab'} onClick={() => setTab(item.id)}>{item.name} <span>{item.count}</span></button>)}</div>
       <div id="sprint-tabpanel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
         <div className="table-heading"><h2>{tabs.find((item) => item.id === tab)?.name} tickets</h2><span>{visible.length} tickets</span></div>
-        <p className="age-note">Durations are elapsed calendar time from Jira status history; “—” means the start time could not be verified.</p>
+        <p className="age-note">Durations are elapsed calendar time from the provider's status history; “—” means the start time could not be verified.</p>
         <div className="ticket-table-scroll"><table className="ticket-table"><thead><tr>
           {tab === 'overview' ? <><th>Key</th><th>Type</th><th>Ticket</th><th>Status</th><th>Assignee</th><th>Testing</th><th>Tester</th><th>Estimate</th><th>Logged</th><th>Points</th></> : null}
           {tab === 'development' ? <><th>Key</th><th>Ticket</th><th>Estimate</th><th>Status</th><th>Time in status</th><th>Subtasks</th><th>Assignee</th><th>Testing</th></> : null}

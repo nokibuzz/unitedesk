@@ -4,9 +4,11 @@ import { addedToSprintAt, dailyWindowStart, descriptionFromJira } from './daily.
 import { elapsedSince, enteredAt, testingElapsed, waitingForTestElapsed } from './history.js';
 import { getStatusMapping, saveStatusMapping } from './mapping.js';
 import { getTeamSettings } from '../settings/team.js';
+import { linearAdapter } from './linear.js';
+import type { SprintAdapter, SprintData } from './adapter.js';
 import type { JiraHistory, JiraIssue, JiraSprint, JiraStatus, SprintSnapshot, SprintTicket, StatusMapping } from './types.js';
 
-type Data = { base: string; board: number; sprint: JiraSprint | null; issues: JiraIssue[]; pointsField: string | null; statuses: JiraStatus[]; histories: Record<string, JiraHistory[] | null> };
+type Data = SprintData;
 
 function requiredUrl(raw: string | undefined): string {
   if (!raw) throw new Error('Set JIRA_URL to your Jira base URL');
@@ -84,7 +86,7 @@ async function liveData(withHistories: boolean, testTaskName: string): Promise<D
     const details = await Promise.all(batch.map((item) => jiraGet<{ fields: { created?: string; assignee?: { displayName?: string } | null } }>(base, `/rest/api/3/issue/${encodeURIComponent(item.key)}`, { fields: 'created,assignee' }).catch(() => null)));
     batch.forEach((item, offset) => { item.fields.created = details[offset]?.fields.created; item.fields.assignee = details[offset]?.fields.assignee ?? item.fields.assignee; });
   }
-  return { base, board, sprint, issues, pointsField, statuses, histories };
+  return { source: 'jira', base, board, sprint, sprintUrl: `${base}/secure/RapidBoard.jspa?rapidView=${board}`, issues, pointsField, statuses, histories };
 }
 async function mockData(root: string): Promise<Data> {
   const folder = path.join(root, 'mock', 'jira');
@@ -92,18 +94,24 @@ async function mockData(root: string): Promise<Data> {
   const sprint = JSON.parse(sprintRaw) as JiraSprint;
   const issues = JSON.parse(issuesRaw) as JiraIssue[];
   if (!Number.isInteger(sprint.id) || !Array.isArray(issues)) throw new Error('Invalid mock Jira data');
-  return { base: 'https://example.atlassian.net', board: 1, sprint, issues, pointsField: 'customfield_10016', statuses: JSON.parse(statusesRaw), histories: JSON.parse(historiesRaw) };
+  return { source: 'mock', base: 'https://example.atlassian.net', board: 1, sprint, sprintUrl: 'https://example.atlassian.net/secure/RapidBoard.jspa?rapidView=1', issues, pointsField: 'customfield_10016', statuses: JSON.parse(statusesRaw), histories: JSON.parse(historiesRaw) };
 }
 async function loadData(root: string, testTaskName: string, withHistories = true): Promise<Data> {
-  const mode = process.env.JIRA_MODE?.trim() || 'mock';
-  if (mode !== 'jira' && mode !== 'mock') throw new Error('JIRA_MODE must be mock or jira');
-  try { return mode === 'jira' ? await liveData(withHistories, testTaskName) : await mockData(root); }
+  const mode = process.env.TICKETING_PROVIDER?.trim() || process.env.JIRA_MODE?.trim() || 'mock';
+  const adapters: Record<string, SprintAdapter> = {
+    jira: { source: 'jira', load: (_root, name, histories) => liveData(histories, name) },
+    mock: { source: 'mock', load: (directory) => mockData(directory) },
+    linear: linearAdapter,
+  };
+  const adapter = adapters[mode];
+  if (!adapter) throw new Error('TICKETING_PROVIDER must be mock, jira or linear');
+  try { return await adapter.load(root, testTaskName, withHistories); }
   catch (error) {
     if (mode === 'mock' && (error as NodeJS.ErrnoException).code === 'ENOENT') throw new Error('Mock data is missing or outdated. Run npm run mock:seed');
     throw error;
   }
 }
-function scope(data: Data): string { return `${data.base}/board/${data.board}`; }
+function scope(data: Data): string { return data.source === 'linear' ? `${data.base}/linear/${data.board}` : `${data.base}/board/${data.board}`; }
 export async function discoverStatusMapping(root: string): Promise<StatusMapping> {
   const settings = await getTeamSettings(root);
   const data = await loadData(root, settings.jiraTestTaskName, false);
@@ -145,8 +153,8 @@ function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, n
     status, statusCategory: fields.status?.statusCategory?.key || 'unknown', statusRole, statusEnteredAt, statusAgeMs: elapsedSince(statusEnteredAt, now),
     createdAt: fields.created ?? null, addedToSprintAt: addedToSprintAt(issueHistory, data.sprint?.name), doneAt,
     assignee: fields.assignee?.displayName || null, tester: test?.fields.assignee?.displayName || null, testing, testingAgeMs, testingWaitingAgeMs,
-    testingTask: test ? { key: test.key, status: testStatus, url: `${data.base}/browse/${encodeURIComponent(test.key)}` } : null,
-    subtasks: subtasks.map((item) => ({ key: item.key, summary: item.fields?.summary || item.key, status: item.fields?.status?.name || 'Unknown', statusRole: roleById.get(item.fields?.status?.id ?? '') ?? roleFor(item.fields?.status?.name || ''), assignee: item.fields?.assignee?.displayName || null, createdAt: item.fields?.created ?? null, url: `${data.base}/browse/${encodeURIComponent(item.key)}` })),
+    testingTask: test ? { key: test.key, status: testStatus, url: issueUrl(test, data) } : null,
+    subtasks: subtasks.map((item) => ({ key: item.key, summary: item.fields?.summary || item.key, status: item.fields?.status?.name || 'Unknown', statusRole: roleById.get(item.fields?.status?.id ?? '') ?? roleFor(item.fields?.status?.name || ''), assignee: item.fields?.assignee?.displayName || null, createdAt: item.fields?.created ?? null, url: issueUrl(item, data) })),
     linkedIssues: (fields.issuelinks ?? []).flatMap((link) => {
       const related = link.outwardIssue?.key && link.outwardIssue.key !== issue.key ? link.outwardIssue : link.inwardIssue;
       return related?.key ? [{ key: related.key, summary: related.fields?.summary || related.key, status: related.fields?.status?.name || 'Unknown', relationship: link.type?.name || 'Linked', url: `${data.base}/browse/${encodeURIComponent(related.key)}` }] : [];
@@ -154,9 +162,10 @@ function normalizeTicket(issue: JiraIssue, data: Data, mapping: StatusMapping, n
     storyPoints: rawPoints == null || !Number.isFinite(points) ? null : points,
     originalEstimateSeconds: fields.timetracking?.originalEstimateSeconds ?? fields.timeoriginalestimate ?? null,
     timeSpentSeconds: fields.timetracking?.timeSpentSeconds ?? fields.timespent ?? 0,
-    updatedAt: fields.updated || null, url: `${data.base}/browse/${encodeURIComponent(issue.key)}`,
+    updatedAt: fields.updated || null, url: issueUrl(issue, data),
   };
 }
+function issueUrl(issue: JiraIssue, data: Data): string { return issue.url || `${data.base}/browse/${encodeURIComponent(issue.key)}`; }
 export async function getActiveSprint(root: string): Promise<SprintSnapshot> {
   const settings = await getTeamSettings(root);
   const data = await loadData(root, settings.jiraTestTaskName);
@@ -166,9 +175,9 @@ export async function getActiveSprint(root: string): Promise<SprintSnapshot> {
   const cutoffHour = settings.dailyCutoffHour;
   const ticketSeconds = settings.dailyTicketSeconds;
   return {
-    source: process.env.JIRA_MODE?.trim() === 'jira' ? 'jira' : 'mock', fetchedAt: new Date(now).toISOString(), statusMappingConfirmed: mapping.confirmed,
+    source: data.source, fetchedAt: new Date(now).toISOString(), statusMappingConfirmed: mapping.confirmed,
     daily: { timeZone, windowStart: dailyWindowStart(now, timeZone, cutoffHour), ticketSeconds },
-    sprint: data.sprint ? { id: data.sprint.id, name: data.sprint.name, goal: data.sprint.goal || null, url: `${data.base}/secure/RapidBoard.jspa?rapidView=${data.board}` } : null,
+    sprint: data.sprint ? { id: data.sprint.id, name: data.sprint.name, goal: data.sprint.goal || null, url: data.sprintUrl || data.base } : null,
     tickets: data.issues.filter((issue) => issue.key && issue.fields && !issue.fields.issuetype?.subtask).map((issue) => normalizeTicket(issue, data, mapping, now, settings.jiraTestTaskName)),
   };
 }

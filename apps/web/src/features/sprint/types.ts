@@ -29,10 +29,10 @@ export interface Ticket {
   url: string;
 }
 export interface Snapshot {
-  source: 'mock' | 'jira';
+  source: 'mock' | 'jira' | 'linear';
   fetchedAt: string;
   statusMappingConfirmed: boolean;
-  sprint: { id: number; name: string; goal: string | null; url: string } | null;
+  sprint: { id: number | string; name: string; goal: string | null; url: string } | null;
   tickets: Ticket[];
   daily: { timeZone: string; windowStart: string; ticketSeconds: number };
 }

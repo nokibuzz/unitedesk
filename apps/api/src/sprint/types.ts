@@ -1,11 +1,12 @@
 export interface JiraSprint {
-  id: number;
+  id: number | string;
   name: string;
   goal?: string | null;
 }
 
 export interface JiraIssue {
   key: string;
+  url?: string;
   fields: {
     summary?: string;
     status?: { id?: string; name?: string; statusCategory?: { key?: string } };
@@ -52,9 +53,9 @@ export interface SprintTicket {
 }
 
 export interface SprintSnapshot {
-  source: 'mock' | 'jira';
+  source: 'mock' | 'jira' | 'linear';
   fetchedAt: string;
-  sprint: { id: number; name: string; goal: string | null; url: string } | null;
+  sprint: { id: number | string; name: string; goal: string | null; url: string } | null;
   tickets: SprintTicket[];
   statusMappingConfirmed: boolean;
   daily: { timeZone: string; windowStart: string; ticketSeconds: number };

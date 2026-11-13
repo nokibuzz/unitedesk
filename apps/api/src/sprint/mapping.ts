@@ -4,7 +4,27 @@ import type { JiraStatus, StatusMapping, StatusRole } from './types.js';
 
 const roles: StatusRole[] = ['backlog', 'in_progress', 'ready_for_testing', 'in_testing', 'done', 'blocked', 'other'];
 interface SavedMapping { version: number; scope: string; statuses: Array<{ id: string; role: StatusRole }> }
-const mappingPath = (root: string) => path.join(root, 'data', 'jira-status-mapping.json');
+interface SavedMappings { version: 2; scopes: Record<string, Array<{ id: string; role: StatusRole }>> }
+const mappingPath = (root: string) => path.join(root, 'data', 'ticket-status-mapping.json');
+const legacyPath = (root: string) => path.join(root, 'data', 'jira-status-mapping.json');
+
+async function savedScopes(root: string): Promise<Record<string, Array<{ id: string; role: StatusRole }>>> {
+  try {
+    let raw: string;
+    try { raw = await readFile(mappingPath(root), 'utf8'); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; raw = await readFile(legacyPath(root), 'utf8'); }
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    if ('version' in parsed && parsed.version === 2 && 'scopes' in parsed && parsed.scopes && typeof parsed.scopes === 'object' && !Array.isArray(parsed.scopes)) {
+      return (parsed as SavedMappings).scopes;
+    }
+    if ('version' in parsed && parsed.version === 1 && 'scope' in parsed && typeof parsed.scope === 'string' && 'statuses' in parsed && Array.isArray(parsed.statuses)) {
+      const old = parsed as SavedMapping;
+      return { [old.scope]: old.statuses };
+    }
+    return {};
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return {}; throw error; }
+}
 
 function proposal(status: JiraStatus): StatusRole {
   const name = status.name.toLowerCase();
@@ -19,17 +39,11 @@ function proposal(status: JiraStatus): StatusRole {
 
 export async function getStatusMapping(root: string, scope: string, discovered: JiraStatus[]): Promise<StatusMapping> {
   const unique = [...new Map(discovered.map((status) => [status.id, status])).values()].sort((a, b) => a.name.localeCompare(b.name));
-  let saved: SavedMapping | null = null;
-  try {
-    const parsed: unknown = JSON.parse(await readFile(mappingPath(root), 'utf8'));
-    if (parsed && typeof parsed === 'object' && 'version' in parsed && parsed.version === 1 && 'scope' in parsed && typeof parsed.scope === 'string' && 'statuses' in parsed && Array.isArray(parsed.statuses)) {
-      saved = parsed as SavedMapping;
-    }
-  }
-  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
-  const prior = saved?.scope === scope ? new Map(saved.statuses.filter((item) => item && typeof item.id === 'string' && roles.includes(item.role)).map((item) => [item.id, item.role])) : new Map<string, StatusRole>();
+  const scopes = await savedScopes(root);
+  const stored = Array.isArray(scopes[scope]) ? scopes[scope] : [];
+  const prior = new Map(stored.filter((item) => item && typeof item.id === 'string' && roles.includes(item.role)).map((item) => [item.id, item.role]));
   const statuses = unique.map((status) => ({ ...status, role: prior.get(status.id) ?? proposal(status) }));
-  return { confirmed: !!saved && saved.scope === scope && unique.every((status) => prior.has(status.id)), statuses };
+  return { confirmed: !!scopes[scope] && unique.every((status) => prior.has(status.id)), statuses };
 }
 
 export async function saveStatusMapping(root: string, scope: string, discovered: JiraStatus[], input: unknown): Promise<StatusMapping> {
@@ -43,7 +57,9 @@ export async function saveStatusMapping(root: string, scope: string, discovered:
   const target = mappingPath(root);
   await mkdir(path.dirname(target), { recursive: true });
   const temp = `${target}.${process.pid}.tmp`;
-  await writeFile(temp, `${JSON.stringify({ version: 1, scope, statuses: [...selected].map(([id, role]) => ({ id, role })) }, null, 2)}\n`, { mode: 0o600 });
+  const scopes = await savedScopes(root);
+  scopes[scope] = [...selected].map(([id, role]) => ({ id, role }));
+  await writeFile(temp, `${JSON.stringify({ version: 2, scopes }, null, 2)}\n`, { mode: 0o600 });
   await rename(temp, target);
   return getStatusMapping(root, scope, discovered);
 }

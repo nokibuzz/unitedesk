@@ -46,7 +46,7 @@ app.get('/api/merge-requests', async (request, response) => {
   }
 });
 
-app.get('/api/jira/status-mapping', async (_request, response) => {
+app.get(['/api/ticketing/status-mapping', '/api/jira/status-mapping'], async (_request, response) => {
   response.set('Cache-Control', 'no-store');
   try { response.json(await discoverStatusMapping(projectDirectory)); }
   catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Status discovery failed' }); }
@@ -68,7 +68,7 @@ app.put('/api/settings/team', async (request, response) => {
   catch (error) { response.status(400).json({ error: error instanceof Error ? error.message : 'Invalid team settings' }); }
 });
 
-app.put('/api/jira/status-mapping', async (request, response) => {
+app.put(['/api/ticketing/status-mapping', '/api/jira/status-mapping'], async (request, response) => {
   response.set('Cache-Control', 'no-store');
   if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress ?? '')) {
     response.status(403).json({ error: 'Status mapping can only be confirmed locally' });
