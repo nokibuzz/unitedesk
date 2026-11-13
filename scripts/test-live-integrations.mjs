@@ -39,19 +39,37 @@ for (const provider of ['gitlab', 'github']) {
     return `${snapshot.items.length} open changes`;
   });
 }
-await check('confluence', async () => {
-  const snapshot = await getDocuments();
-  assert.equal(snapshot.source, 'confluence');
-  assert.ok(snapshot.spaces.length > 0, 'no accessible spaces');
-  assert.ok(snapshot.pages.length > 0, 'no test pages');
-  assert.ok(snapshot.pages.every((page) => page.url.startsWith('https://')), 'missing original page link');
-  const preview = await getDocumentPage(snapshot.pages[0].id);
-  assert.equal(preview.id, snapshot.pages[0].id);
-  assert.equal(typeof preview.html, 'string');
-  const query = process.env.CONFLUENCE_TEST_QUERY?.trim();
-  if (query) {
-    const search = await searchDocuments(query);
-    assert.ok(search.results.length > 0, 'no indexed results for the test query');
+const configuredDocuments = process.env.DOCUMENTATION_PROVIDERS;
+for (const provider of ['confluence', 'github', 'notion']) {
+  if (provider === 'notion' && process.env.NOTION_MODE !== 'mock' && !process.env.NOTION_API_KEY?.trim()) {
+    console.log('SKIP notion: no local API key');
+    continue;
   }
-  return `${snapshot.spaces.length} spaces, ${snapshot.pages.length} pages, preview${query ? ' and search' : ''}`;
-});
+  await check(`${provider}${provider === 'notion' && process.env.NOTION_MODE === 'mock' ? ' sample' : ''} documents`, async () => {
+    process.env.DOCUMENTATION_PROVIDERS = provider;
+    const snapshot = await getDocuments();
+    assert.equal(snapshot.source, provider);
+    assert.ok(snapshot.spaces.length > 0, 'no accessible spaces');
+    const pages = snapshot.pages.filter((page) => page.kind !== 'folder');
+    assert.ok(pages.length > 0, 'no test pages');
+    assert.ok(pages.every((page) => process.env.NOTION_MODE === 'mock' && provider === 'notion' ? !page.url : page.url.startsWith('https://')), 'missing original page link');
+    const preview = await getDocumentPage(pages[0].id);
+    assert.equal(preview.id, pages[0].id);
+    assert.equal(typeof preview.html, 'string');
+    const query = process.env[`${provider.toUpperCase()}${provider === 'github' ? '_DOCS' : ''}_TEST_QUERY`]?.trim();
+    if (query) {
+      const search = await searchDocuments(query);
+      assert.ok(search.results.length > 0, 'no indexed results for the test query');
+    }
+    return `${snapshot.spaces.length} spaces, ${pages.length} pages, preview${query ? ' and search' : ''}`;
+  });
+}
+if (configuredDocuments) {
+  process.env.DOCUMENTATION_PROVIDERS = configuredDocuments;
+  await check('combined knowledge', async () => {
+    const snapshot = await getDocuments();
+    assert.equal(snapshot.source, configuredDocuments.includes(',') ? 'mixed' : configuredDocuments);
+    assert.ok(snapshot.spaces.length > 0);
+    return `${snapshot.spaces.length} spaces, ${snapshot.pages.filter((page) => page.kind !== 'folder').length} pages`;
+  });
+}

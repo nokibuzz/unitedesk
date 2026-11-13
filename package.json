@@ -16,9 +16,10 @@
     "build": "npm run build --workspace @unitedesk/web && npm run build --workspace @unitedesk/api",
     "typecheck": "npm run typecheck --workspace @unitedesk/web && npm run typecheck --workspace @unitedesk/api",
     "start": "npm run start --workspace @unitedesk/api",
-    "mock:seed": "npm run mock:seed:jira && npm run mock:seed:gitlab",
+    "mock:seed": "npm run mock:seed:jira && npm run mock:seed:gitlab && npm run mock:seed:notion",
     "mock:seed:jira": "node scripts/seed-mock.mjs",
     "mock:seed:gitlab": "node scripts/seed-gitlab-mock.mjs",
+    "mock:seed:notion": "node scripts/seed-notion-mock.mjs",
     "test:history": "node --import tsx --test apps/api/src/sprint/history.test.ts",
     "test:daily": "node --import tsx --test apps/api/src/sprint/daily.test.ts",
     "test:reviews": "node --import tsx --test apps/api/src/merge-requests/service.test.ts apps/web/tests/review-filter.test.ts",
@@ -26,7 +27,10 @@
     "test:linear": "node --import tsx --test apps/api/src/sprint/linear.test.ts",
     "test:github": "node --import tsx --test apps/api/src/merge-requests/github.test.ts",
     "test:confluence": "node --import tsx --test apps/api/src/documents/confluence.test.ts",
+    "test:github-docs": "node --import tsx --test apps/api/src/documents/github.test.ts",
+    "test:notion-docs": "node --import tsx --test apps/api/src/documents/notion.test.ts",
+    "test:documents": "node --import tsx --test apps/api/src/documents/service.test.ts",
     "test:live": "npm run build && node scripts/test-live-integrations.mjs",
-    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:linear && npm run test:github && npm run test:confluence"
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:linear && npm run test:github && npm run test:confluence && npm run test:github-docs && npm run test:notion-docs && npm run test:documents"
   }
 }
