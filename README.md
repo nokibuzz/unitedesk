@@ -2,7 +2,7 @@
 
 **One clear view of the work your team does across its tools.**
 
-[🌐 Try the live demo](https://nokibuzz.github.io/unitedesk/) · [📖 Connect your tools](docs/integrations.md) · [🤝 Contribute](CONTRIBUTING.md)
+[🌐 Try the live demo](https://nokibuzz.github.io/unitedesk/) · [📦 Developer Preview v0.1.0](https://github.com/nokibuzz/unitedesk/releases/tag/v0.1.0) · [📖 Connect your tools](docs/integrations.md) · [🤝 Contribute](CONTRIBUTING.md)
 
 [![Public demo](https://github.com/nokibuzz/unitedesk/actions/workflows/pages-demo.yml/badge.svg)](https://github.com/nokibuzz/unitedesk/actions/workflows/pages-demo.yml) ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -113,4 +113,4 @@ Planned work includes provider actions, safer multi-user authentication, easier 
 
 ## 🤝 Contributing
 
-Ideas, bug reports, documentation, and code are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. UniteDesk is released under the [MIT License](LICENSE).
+Ideas, bug reports, documentation, and code are welcome. Start with a [good first issue](https://github.com/nokibuzz/unitedesk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. See the [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md). UniteDesk is released under the [MIT License](LICENSE).

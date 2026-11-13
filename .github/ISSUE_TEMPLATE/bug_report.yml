@@ -1,0 +1,44 @@
+name: Bug report
+description: Report a reproducible problem using synthetic data
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: "For vulnerabilities or exposed credentials, use [private vulnerability reporting](https://github.com/nokibuzz/unitedesk/security/advisories) instead. Do not paste real tokens, company URLs, or customer data here."
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Explain the observed behavior and the expected result.
+      placeholder: "In the public demo, opening..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Use the public demo or synthetic local data if possible.
+      placeholder: "1. Open...\n2. Select...\n3. Observe..."
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did you see it?
+      options:
+        - Public GitHub Pages demo
+        - Local mock mode
+        - Local provider connection
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "v0.1.0 or commit hash"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe logs or screenshots
+      description: Remove credentials, private URLs, and personal data before attaching anything.

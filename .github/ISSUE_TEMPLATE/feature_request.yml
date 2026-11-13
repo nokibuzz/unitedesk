@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a workflow or a provider adapter
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: Describe the team's task and where the current flow is difficult.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the smallest useful version and what a user would see or do.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Sprint and daily mode
+        - Review Queue
+        - Knowledge
+        - Scrum Poker
+        - Retrospective
+        - Useful links and settings
+        - New provider adapter
+        - Other
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria or examples
+      description: Include synthetic examples, provider API references, or edge cases if relevant.

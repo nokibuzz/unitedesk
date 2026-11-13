@@ -2,6 +2,8 @@
 
 Thanks for helping teams make sense of work across tools. Please open an issue before a large change so we can agree on scope and the adapter boundary.
 
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md). Use the [private security reporting path](SECURITY.md) for vulnerabilities, not a public issue. New contributors can start with an issue labeled [`good first issue`](https://github.com/nokibuzz/unitedesk/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22).
+
 ## Local setup
 
 1. Install Node.js 22.12+ and npm 10+.
