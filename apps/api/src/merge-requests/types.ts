@@ -20,7 +20,7 @@ export interface MergeRequest {
 }
 export interface ReviewItem extends MergeRequest { mine: boolean; waitingForMe: boolean; aging: boolean }
 export interface ReviewSnapshot {
-  source: 'mock' | 'gitlab';
+  source: 'mock' | 'gitlab' | 'github';
   fetchedAt: string;
   group: string;
   viewer: GitLabPerson;

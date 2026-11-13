@@ -2,6 +2,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { decorateItems } from './model.js';
 import { getTeamSettings } from '../settings/team.js';
+import { githubAdapter } from './github.js';
+import type { ReviewAdapter } from './adapter.js';
 import type { GitLabPerson, MergeRequest, ReviewSnapshot } from './types.js';
 
 interface GitLabMr {
@@ -106,15 +108,22 @@ async function mockSnapshot(root: string, staleAfterDays: number): Promise<Revie
 }
 let cache: { key: string; expires: number; promise: Promise<ReviewSnapshot> } | null = null;
 export async function getMergeRequests(root: string, refresh = false): Promise<ReviewSnapshot> {
-  const mode = process.env.GITLAB_MODE?.trim() || 'mock';
-  if (mode !== 'mock' && mode !== 'gitlab') throw new Error('GITLAB_MODE must be mock or gitlab');
+  const mode = process.env.CODE_REVIEW_PROVIDER?.trim() || process.env.GITLAB_MODE?.trim() || 'mock';
+  const adapters: Record<string, ReviewAdapter> = {
+    gitlab: { source: 'gitlab', load: (_root, days) => liveSnapshot(days) },
+    mock: { source: 'mock', load: (directory, days) => mockSnapshot(directory, days) },
+    github: githubAdapter,
+  };
+  const adapter = adapters[mode];
+  if (!adapter) throw new Error('CODE_REVIEW_PROVIDER must be mock, gitlab or github');
   const { gitlabStaleDays } = await getTeamSettings(root);
-  if (mode === 'mock') return mockSnapshot(root, gitlabStaleDays);
-  const key = [process.env.GITLAB_URL, process.env.GITLAB_GROUP, process.env.GITLAB_TOKEN, gitlabStaleDays].join('|');
+  if (mode === 'mock') return adapter.load(root, gitlabStaleDays);
+  const key = [mode, process.env.GITLAB_URL, process.env.GITLAB_GROUP, process.env.GITLAB_TOKEN,
+    process.env.GITHUB_API_URL, process.env.GITHUB_OWNER, process.env.GITHUB_REPOS, process.env.GITHUB_TOKEN, gitlabStaleDays].join('|');
   const ttl = Number(process.env.GITLAB_CACHE_TTL_MS ?? 30_000);
   if (!Number.isInteger(ttl) || ttl < 0 || ttl > 3_600_000) throw new Error('GITLAB_CACHE_TTL_MS must be between 0 and 3600000');
   if (!refresh && cache?.key === key && Date.now() < cache.expires) return cache.promise;
-  const promise = liveSnapshot(gitlabStaleDays);
+  const promise = adapter.load(root, gitlabStaleDays);
   cache = { key, expires: Date.now() + ttl, promise };
   try { return await promise; }
   catch (error) { if (cache?.promise === promise) cache = null; throw error; }

@@ -8,5 +8,5 @@ export interface MergeRequest {
   mine: boolean; waitingForMe: boolean; aging: boolean;
 }
 export interface ReviewSnapshot {
-  source: 'mock' | 'gitlab'; fetchedAt: string; group: string; viewer: Person; staleAfterDays: number; items: MergeRequest[];
+  source: 'mock' | 'gitlab' | 'github'; fetchedAt: string; group: string; viewer: Person; staleAfterDays: number; items: MergeRequest[];
 }

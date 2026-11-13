@@ -19,11 +19,12 @@ function approvalLabel(item: MergeRequest): string {
 }
 function pipelineLabel(status: string | null, known = true): string { return !known ? 'Unavailable' : status ? status.replaceAll('_', ' ') : 'No pipeline'; }
 function options(values: string[]): string[] { return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b)); }
-function MrCard({ item, mock }: { item: MergeRequest; mock: boolean }) {
+function MrCard({ item, source }: { item: MergeRequest; source: ReviewSnapshot['source'] }) {
+  const mock = source === 'mock';
   const pipelineTone = item.pipelineStatus === 'failed' ? 'danger' : item.pipelineStatus === 'success' ? 'success' : item.pipelineStatus === 'running' || item.pipelineStatus === 'pending' ? 'active' : 'neutral';
   const approvalTone = item.approval.approved ? 'success' : item.approval.approved === false ? 'pending' : 'neutral';
   return <article className="review-card">
-    <div className="review-card-main"><div className="review-card-overline"><span>{item.project}</span><span>!{item.iid}</span>{item.draft ? <span className="review-badge" data-tone="neutral">Draft</span> : null}</div>
+    <div className="review-card-main"><div className="review-card-overline"><span>{item.project}</span><span>{source === 'github' ? '#' : '!'}{item.iid}</span>{item.draft ? <span className="review-badge" data-tone="neutral">Draft</span> : null}</div>
       <h2>{mock ? item.title : <a href={item.url} target="_blank" rel="noreferrer">{item.title} ↗</a>}</h2>
       <p className="review-branches" title={`${item.sourceBranch} → ${item.targetBranch}`}><code>{item.sourceBranch}</code><span>→</span><code>{item.targetBranch}</code></p>
     </div>
@@ -71,7 +72,7 @@ export default function ReviewQueuePage() {
   const visible = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const views: Array<{ id: View; label: string; count: number }> = [
     { id: 'all', label: 'All open', count: items.length },
-    { id: 'mine', label: 'My merge requests', count: items.filter((item) => item.mine).length },
+    { id: 'mine', label: 'My changes', count: items.filter((item) => item.mine).length },
     { id: 'review', label: 'For my review', count: items.filter((item) => item.waitingForMe).length },
     { id: 'aging', label: 'Aging', count: items.filter((item) => item.aging).length },
   ];
@@ -87,13 +88,13 @@ export default function ReviewQueuePage() {
   const hasFilters = Boolean(search) || activeFilters.length > 0;
   function resetFilters() { setSearch(''); setAuthor(''); setReviewer(''); setProject(''); setTarget(''); setPipeline(''); setApproval('all'); setSort('oldest'); setPage(1); }
   return <section className="reviews-page" aria-labelledby="reviews-heading">
-    <div className="sprint-heading-row"><div><div className="eyebrow"><span className="eyebrow-dot" /> Code / GitLab</div><h1 id="reviews-heading" className="sprint-title">Review Queue<span className="title-period">.</span></h1><p className="sprint-description">Open changes, reviews waiting on you, and the details that move work forward.</p></div><button className="refresh-button" type="button" disabled={loading} onClick={() => setRevision((value) => value + 1)}>{loading ? 'Loading…' : 'Refresh'}</button></div>
+    <div className="sprint-heading-row"><div><div className="eyebrow"><span className="eyebrow-dot" /> Code / {snapshot?.source === 'github' ? 'GitHub' : snapshot?.source === 'gitlab' ? 'GitLab' : 'Reviews'}</div><h1 id="reviews-heading" className="sprint-title">Review Queue<span className="title-period">.</span></h1><p className="sprint-description">Open changes, reviews waiting on you, and the details that move work forward.</p></div><button className="refresh-button" type="button" disabled={loading} onClick={() => setRevision((value) => value + 1)}>{loading ? 'Loading…' : 'Refresh'}</button></div>
     {error ? <div className="sprint-alert" role="alert">{error}</div> : null}
     {snapshot ? <>
-      <div className="review-context"><div><span className="context-label">GitLab group</span><strong>{snapshot.group}</strong></div><div className="context-meta"><span className="source-badge">{snapshot.source === 'mock' ? 'Mock data' : 'Live GitLab'}</span><span>Viewing as @{snapshot.viewer.username}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span></div></div>
+      <div className="review-context"><div><span className="context-label">{snapshot.source === 'github' ? 'GitHub owner' : 'GitLab group'}</span><strong>{snapshot.group}</strong></div><div className="context-meta"><span className="source-badge">{snapshot.source === 'mock' ? 'Mock data' : snapshot.source === 'github' ? 'Live GitHub' : 'Live GitLab'}</span><span>Viewing as @{snapshot.viewer.username}</span><span>Updated {new Date(snapshot.fetchedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span></div></div>
       <div className="review-views" role="group" aria-label="Merge request views">{views.map((item) => <button key={item.id} type="button" aria-pressed={view === item.id} className={view === item.id ? 'review-view active' : 'review-view'} onClick={() => { setView(item.id); setPage(1); }}><span>{item.label}</span><strong>{item.count}</strong></button>)}</div>
       <div className="review-toolbar">
-        <label className="review-search"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5.7" stroke="currentColor" strokeWidth="1.7"/><path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg><span className="sr-only">Search merge requests</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search merge requests, branches, projects…" /></label>
+        <label className="review-search"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.7" cy="8.7" r="5.7" stroke="currentColor" strokeWidth="1.7"/><path d="m13 13 4 4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg><span className="sr-only">Search changes</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search changes, branches, projects…" /></label>
         <button className="review-filter-toggle" type="button" aria-expanded={filtersOpen} aria-controls="review-advanced-filters" onClick={() => setFiltersOpen((open) => !open)}>Filters{activeFilters.length ? <span className="review-filter-count">{activeFilters.length}</span> : null}<span className="review-chevron" aria-hidden="true">⌄</span></button>
         {hasFilters ? <button className="review-clear-inline" type="button" onClick={resetFilters}>Clear all</button> : null}
       </div>
@@ -110,9 +111,9 @@ export default function ReviewQueuePage() {
         <label><span>Sort</span><select value={sort} onChange={(event) => { setSort(event.target.value as Sort); setPage(1); }}><option value="oldest">Oldest first</option><option value="newest">Newest first</option><option value="updated">Recently updated</option></select></label>
         </div>
       </div>
-      <div className="table-heading"><h2>{views.find((item) => item.id === view)?.label}</h2><span>{filtered.length} merge request{filtered.length === 1 ? '' : 's'} · Aging after {snapshot.staleAfterDays} calendar days</span></div>
-      <div className="review-list">{visible.length ? visible.map((item) => <MrCard key={item.id} item={item} mock={snapshot.source === 'mock'} />) : <div className="empty-state">No merge requests match these filters.</div>}</div>
+      <div className="table-heading"><h2>{views.find((item) => item.id === view)?.label}</h2><span>{filtered.length} open change{filtered.length === 1 ? '' : 's'} · Aging after {snapshot.staleAfterDays} calendar days</span></div>
+      <div className="review-list">{visible.length ? visible.map((item) => <MrCard key={item.id} item={item} source={snapshot.source} />) : <div className="empty-state">No changes match these filters.</div>}</div>
       {totalPages > 1 ? <div className="review-pagination"><button type="button" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)}>← Previous</button><span>Page {currentPage} of {totalPages}</span><button type="button" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)}>Next →</button></div> : null}
-    </> : !loading && !error ? <div className="empty-state">No merge requests yet.</div> : null}
+    </> : !loading && !error ? <div className="empty-state">No open changes yet.</div> : null}
   </section>;
 }
