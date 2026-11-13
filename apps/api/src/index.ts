@@ -7,6 +7,7 @@ import { getMergeRequests } from './merge-requests/service.js';
 import { getDocumentPage, getDocuments, searchDocuments } from './documents/service.js';
 import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './sprint/service.js';
 import { getTeamSettings, saveTeamSettings } from './settings/team.js';
+import { getUsefulLinks, saveUsefulLinks } from './useful-links/service.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(currentDirectory, '../../..');
@@ -15,7 +16,7 @@ const envFile = path.join(projectDirectory, '.env');
 if (existsSync(envFile)) loadEnvFile(envFile);
 
 const app = express();
-app.use(express.json({ limit: '32kb' }));
+app.use(express.json({ limit: '128kb' }));
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST?.trim() || '127.0.0.1';
 
@@ -75,6 +76,22 @@ app.get('/api/settings/team', async (_request, response) => {
   response.set('Cache-Control', 'no-store');
   try { response.json({ settings: await getTeamSettings(projectDirectory) }); }
   catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Team settings are unavailable' }); }
+});
+
+app.get('/api/useful-links', async (_request, response) => {
+  response.set('Cache-Control', 'no-store');
+  try { response.json({ links: await getUsefulLinks(projectDirectory) }); }
+  catch (error) { response.status(503).json({ error: error instanceof Error ? error.message : 'Useful links are unavailable' }); }
+});
+
+app.put('/api/useful-links', async (request, response) => {
+  response.set('Cache-Control', 'no-store');
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress ?? '')) {
+    response.status(403).json({ error: 'Useful links can only be changed locally' });
+    return;
+  }
+  try { response.json({ links: await saveUsefulLinks(projectDirectory, request.body?.links) }); }
+  catch (error) { response.status(400).json({ error: error instanceof Error ? error.message : 'Invalid useful links' }); }
 });
 
 app.put('/api/settings/team', async (request, response) => {

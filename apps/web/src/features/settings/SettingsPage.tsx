@@ -3,6 +3,7 @@ import type { MainSection } from '../../app/personal';
 import type { ThemeMode } from '../../app/useTheme';
 import type { Mapping, Role } from '../sprint/types';
 import type { TeamSettings } from './types';
+import UsefulLinksSettings from './UsefulLinksSettings';
 import './settings.css';
 
 type SettingsTab = 'personal' | 'team';
@@ -25,7 +26,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   mode: ThemeMode; onModeChange: (mode: ThemeMode) => void;
   defaultSection: MainSection; onDefaultSectionChange: (section: MainSection) => void;
 }) {
-  const [tab, setTab] = useState<SettingsTab>('personal');
+  const [tab, setTab] = useState<SettingsTab>(() => window.location.hash === '#/settings/team' ? 'team' : 'personal');
   const [team, setTeam] = useState<TeamDraft | null>(null);
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [teamLoading, setTeamLoading] = useState(true);
@@ -36,6 +37,12 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
   const [mappingNotice, setMappingNotice] = useState('');
   const [savingTeam, setSavingTeam] = useState(false);
   const [savingMapping, setSavingMapping] = useState(false);
+  useEffect(() => {
+    const onHashChange = () => { if (window.location.hash === '#/settings/team') { setTab('team'); requestAnimationFrame(() => document.getElementById('useful-links-settings')?.scrollIntoView({ block: 'start' })); } };
+    onHashChange();
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/settings/team', { signal: controller.signal }).then((response) => responseBody<{ settings: TeamSettings }>(response))
@@ -108,6 +115,7 @@ export default function SettingsPage({ mode, onModeChange, defaultSection, onDef
             <button className="settings-save" type="button" onClick={saveMapping} disabled={savingMapping || !mapping.statuses.length}>{savingMapping ? 'Saving…' : 'Confirm status mapping'}</button>
           </> : null}
         </div>
+        <UsefulLinksSettings />
         <div className="settings-card"><div className="settings-card-heading"><div><h2>Connections</h2><p>Provider addresses and access tokens are set in the server's private <code>.env</code> file. Restart the server after changing them.</p></div><span className="settings-scope">Server</span></div></div>
       </div>}
     </div>

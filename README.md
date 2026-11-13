@@ -30,7 +30,13 @@ For provider setup, token guidance, and a local validation checklist, see [Conne
 
 Use the button in the top-right corner to open **Settings**. **Personal** contains the theme (system, light, or dark) and the default section opened by the UniteDesk logo. These choices are stored in the current browser.
 
-**Team** contains the daily time zone, previous daily hour, presentation timer, testing task name, review aging threshold, and ticket status mapping. Team workflow values are saved in the local `data/team-settings.json`; confirmed status roles are saved per provider in `data/ticket-status-mapping.json`. Existing Jira confirmations are migrated from the older local file when saved. The `data/` directory is ignored by Git. Values in `.env` supply defaults until team workflow values are saved from Settings. Connection URLs and tokens remain in the private `.env`. Settings changes are accepted only from the local machine while authentication is not implemented.
+**Team** contains the daily time zone, previous daily hour, presentation timer, testing task name, review aging threshold, ticket status mapping, and useful links. Team workflow values are saved in the local `data/team-settings.json`; confirmed status roles are saved per provider in `data/ticket-status-mapping.json`; useful links are saved in `data/useful-links.json`. Existing Jira confirmations are migrated from the older local file when saved. The `data/` directory is ignored by Git. Values in `.env` supply defaults until team workflow values are saved from Settings. Connection URLs and tokens remain in the private `.env`. Settings changes are accepted only from the local machine while authentication is not implemented.
+
+### Useful links
+
+Add links in **Settings → Team → Useful links**. Give each link a name, HTTP or HTTPS URL, optional description, and comma-separated search keywords. Use keywords for terms that are not in the name, such as a service, team, or environment. The chain icon in the header opens the link search from every page; `Ctrl+K` or `⌘K` also opens it. Search matches words across the name, keywords, description, and URL, tolerates a one-character typo, and accepts terms in any order. Results open the configured URL in a new tab.
+
+The icon defaults to the destination site's `/favicon.ico`; a custom image URL can be entered if needed. The browser requests the icon directly from that site. UniteDesk does not send internal link addresses to a third-party favicon service. If an icon cannot load, the link's initial is shown. Links are shared by users of the same server, but the current Settings editor requires local access. The `data/useful-links.json` file is intentionally excluded from Git because link addresses may be private. Do not put access tokens in link URLs. Authentication and remote team editing are future work.
 
 ### Mock Jira data
 

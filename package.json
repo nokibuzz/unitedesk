@@ -30,7 +30,8 @@
     "test:github-docs": "node --import tsx --test apps/api/src/documents/github.test.ts",
     "test:notion-docs": "node --import tsx --test apps/api/src/documents/notion.test.ts",
     "test:documents": "node --import tsx --test apps/api/src/documents/service.test.ts",
+    "test:links": "node --import tsx --test apps/api/src/useful-links/service.test.ts apps/web/tests/useful-links-search.test.ts",
     "test:live": "npm run build && node scripts/test-live-integrations.mjs",
-    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:linear && npm run test:github && npm run test:confluence && npm run test:github-docs && npm run test:notion-docs && npm run test:documents"
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:linear && npm run test:github && npm run test:confluence && npm run test:github-docs && npm run test:notion-docs && npm run test:documents && npm run test:links"
   }
 }

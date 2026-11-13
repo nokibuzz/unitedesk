@@ -5,13 +5,14 @@ import SprintPage from '../features/sprint/SprintPage';
 import ReviewQueuePage from '../features/reviews/ReviewQueuePage';
 import DocumentsPage from '../features/documents/DocumentsPage';
 import SettingsPage from '../features/settings/SettingsPage';
+import UsefulLinksLauncher from '../features/useful-links/UsefulLinksLauncher';
 
 type Section = MainSection | 'settings';
 function sectionFromHash(fallback: MainSection): Section {
   if (window.location.hash === '#/sprint') return 'sprint';
   if (window.location.hash === '#/reviews') return 'reviews';
   if (window.location.hash === '#/documents') return 'documents';
-  if (window.location.hash === '#/settings') return 'settings';
+  if (window.location.hash === '#/settings' || window.location.hash === '#/settings/team') return 'settings';
   return fallback;
 }
 function SettingsIcon() {
@@ -31,6 +32,7 @@ export default function App() {
     <header className="site-header"><div className="header-content">
       <a className="brand" href={`#/${defaultSection}`} aria-label="UniteDesk home"><span className="brand-mark" aria-hidden="true"><span /><span /><span /></span><span>UniteDesk</span></a>
       <nav className="site-nav" aria-label="Main navigation"><a href="#/sprint" aria-current={section === 'sprint' ? 'page' : undefined}>Sprint</a><a href="#/reviews" aria-current={section === 'reviews' ? 'page' : undefined}>Review Queue</a><a href="#/documents" aria-current={section === 'documents' ? 'page' : undefined}>Knowledge</a></nav>
+      <UsefulLinksLauncher />
       <a className="settings-link" href="#/settings" aria-label="Settings" aria-current={section === 'settings' ? 'page' : undefined} title="Settings"><SettingsIcon /></a>
     </div></header>
     <main className={`main-content ${section === 'documents' ? 'documents-main' : 'sprint-main'}`}>

@@ -33,4 +33,21 @@
 .settings-mapping-list strong { display: block; overflow-wrap: anywhere; font-size: 13px; }
 .settings-mapping-list small { display: block; margin-top: 3px; color: var(--text-muted); font-size: 11px; }
 .settings-mapping-list select { width: min(100%, 190px); flex: none; }
+.settings-links-list { display: grid; gap: 8px; margin-bottom: 24px; }
+.settings-link-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 11px 12px; border: 1px solid var(--border); border-radius: 10px; }
+.settings-link-info { display: grid; gap: 3px; flex: 1; min-width: 0; }
+.settings-link-info strong, .settings-link-info span, .settings-link-info small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-link-info strong { font-size: 13px; }
+.settings-link-info span { color: var(--text-muted); font-size: 11px; }
+.settings-link-info small { color: var(--text-muted); font-size: 10px; }
+.settings-link-actions { display: flex; gap: 4px; }
+.settings-link-actions button, .settings-cancel { padding: 7px 9px; border: 0; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 12px; }
+.settings-link-actions button:hover, .settings-cancel:hover { background: var(--surface-raised); color: var(--text); }
+.settings-links-empty { margin: 0 0 22px; color: var(--text-muted); font-size: 13px; }
+.settings-links-form { padding-top: 20px; border-top: 1px solid var(--border); }
+#useful-links-settings { scroll-margin-top: 24px; }
+.settings-links-form h3 { margin: 0 0 17px; font-size: 14px; }
+.settings-links-form-actions { display: flex; align-items: baseline; gap: 8px; }
+.settings-optional { color: var(--text-muted); font-weight: 400; }
+@media (max-width: 650px) { .settings-link-row { flex-wrap: wrap; } .settings-link-actions { width: 100%; justify-content: flex-end; } }
 @media (max-width: 650px) { .settings-card { padding: 19px; } .settings-field-grid { grid-template-columns: 1fr; } .settings-input.settings-full { grid-column: auto; } .settings-mapping-list label { align-items: stretch; flex-direction: column; } .settings-mapping-list select { width: 100%; } }
