@@ -24,6 +24,8 @@ npm run dev
 Open <http://localhost:5173>. The API health endpoint is available through the web development server at <http://localhost:5173/api/health>.
 To change the API port, copy `.env.example` to `.env` and edit `PORT`; the development proxy follows the same setting.
 
+For provider setup, token guidance, and a local validation checklist, see [Connecting your tools](docs/integrations.md). Jira and GitLab are the only live connectors today. Confluence, GitHub, and Linear are documented as planned connectors so their accounts can be prepared without implying that their data appears in UniteDesk yet.
+
 ### Settings
 
 Use the button in the top-right corner to open **Settings**. **Personal** contains the theme (system, light, or dark) and the default section opened by the UniteDesk logo. These choices are stored in the current browser.
