@@ -30,7 +30,7 @@ JIRA_EMAIL=you@example.com
 JIRA_API_TOKEN=your-local-token
 ```
 
-`JIRA_URL` and `JIRA_BOARD_ID` can override values inferred from the board URL. Open the Sprint view and confirm the proposed status roles in **Settings → Team → Ticket status mapping**. The app reads issues, subtasks, and status changelogs; it does not change Jira issues. A dash in a duration column means the start of that interval could not be verified. Story points and estimates are empty if Jira does not expose or populate those fields; `JIRA_STORY_POINTS_FIELD` can name a custom field ID.
+`JIRA_URL` and `JIRA_BOARD_ID` can override values inferred from the board URL. Open the Sprint view and confirm the proposed status roles in **Settings → Team → Ticket status mapping**. The app reads issues, subtasks, and status changelogs. The one Jira write action is **Tools → Scrum Poker → Publish to Jira**, which requires a host confirmation and issue edit permission. A dash in a duration column means the start of that interval could not be verified. Story points and estimates are empty if Jira does not expose or populate those fields; `JIRA_STORY_POINTS_FIELD` can name a custom field ID.
 
 ## Linear
 

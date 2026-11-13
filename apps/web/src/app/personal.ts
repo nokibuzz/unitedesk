@@ -1,9 +1,9 @@
-export type MainSection = 'sprint' | 'reviews' | 'documents';
+export type MainSection = 'sprint' | 'reviews' | 'documents' | 'tools';
 const key = 'unitedesk.defaultSection';
 export function getDefaultSection(): MainSection {
   try {
     const saved = localStorage.getItem(key);
-    return saved === 'reviews' || saved === 'documents' ? saved : 'sprint';
+    return saved === 'reviews' || saved === 'documents' || saved === 'tools' ? saved : 'sprint';
   }
   catch { return 'sprint'; }
 }

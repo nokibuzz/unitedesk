@@ -10,7 +10,7 @@
 
 UniteDesk brings active sprint work, code reviews, documentation, and team shortcuts into one workspace. Keep using the tools you already have: UniteDesk reads their data, organizes it for the team, and links back to the source. It is designed to be configurable for different teams instead of assuming one company's workflow.
 
-> **Demo notice:** The [public demo](https://nokibuzz.github.io/unitedesk/) uses synthetic, read-only data. It contains no connected accounts, access tokens, or private company links. The local server is required for real integrations.
+> **Demo notice:** The [public demo](https://nokibuzz.github.io/unitedesk/) uses synthetic data. Scrum Poker works inside your browser; its rooms are not shared with other visitors. Settings and provider data remain read-only. No accounts, tokens, or private company links are included.
 
 ## ✨ What you can do today
 
@@ -20,14 +20,15 @@ UniteDesk brings active sprint work, code reviews, documentation, and team short
 | 🗣️ **Daily mode** | Present one ticket at a time, read its description and linked work, then review a sprint recap | Jira, Linear, local mock data |
 | 🔎 **Review Queue** | See open changes, your work, reviews waiting for you, aging requests, approvals, pipelines, and advanced filters | GitLab or GitHub |
 | 📚 **Knowledge** | Browse document trees, search across sources, read a preview, and open the original page | Confluence, GitHub Markdown, Notion |
+| 🃏 **Scrum Poker** | Create a room, choose an active sprint ticket, vote privately, reveal results, compare median and vote distribution, and save a final estimate | Jira, Linear, local mock data |
 | 🔗 **Useful links** | Shared shortcuts with icons, keywords, and fuzzy search from every page (`Ctrl/⌘+K`) | Any HTTP or HTTPS URL |
 | ⚙️ **Settings** | Light and dark themes, start page, team workflow rules, status mapping, and a GitLab or GitHub Review Queue connection | Browser and local server |
 
-UniteDesk currently **reads** provider data. Editing Jira issues, approving code reviews, and editing documents in UniteDesk are not implemented. The original tools remain the source of truth.
+Scrum Poker can publish a confirmed story point estimate to a live Jira issue when the host explicitly chooses **Publish to Jira**. Other provider actions, code review approvals, and document editing are not yet implemented. The original tools remain the source of truth.
 
 ## 🚀 Try it
 
-Open **[nokibuzz.github.io/unitedesk](https://nokibuzz.github.io/unitedesk/)**. Explore the sample sprint, start Daily mode, filter the Review Queue, search Knowledge, and open Useful links. The demo is hosted as a static GitHub Pages site; it does not need an API server.
+Open **[nokibuzz.github.io/unitedesk](https://nokibuzz.github.io/unitedesk/)**. Explore the sample sprint, start Daily mode, filter the Review Queue, search Knowledge, and open Useful links. Try **[Scrum Poker](https://nokibuzz.github.io/unitedesk/#/tools/poker)** with sample teammates. The demo is hosted as a static GitHub Pages site; it does not need an API server.
 
 To run your own workspace locally:
 
@@ -42,6 +43,14 @@ npm run dev
 Open the web address printed by the development command. Node.js **22.12+** and npm **10+** are required. The ignored `mock/` folder contains editable Jira, GitLab, and Notion sample records. For a full local Knowledge sample, set `DOCUMENTATION_PROVIDERS=notion` and `NOTION_MODE=mock` in a private `.env` file copied from `.env.example`.
 
 For a production-style local build, run `npm run build` and `npm start`. The server binds to `127.0.0.1` by default while authentication is unfinished. The public demo is built separately with `npm run build:demo` and published by [the Pages workflow](.github/workflows/pages-demo.yml).
+
+### 🃏 Plan together with Scrum Poker
+
+Open **Tools → Scrum Poker**, enter a display name, and create a room. Share its code or invite link with teammates running the same local server. The host chooses a ticket from the connected active sprint. Everyone picks a story point card; votes stay hidden until the host reveals them. The results show each vote, the distribution, average, and median. The host can mark a ticket for another discussion, start a new round, and save the agreed estimate in the room.
+
+For teams that estimate time too, the host can enable optional **Development / QA hours** before voting starts. The host may publish a final story point value to Jira through a separate confirmation step. This requires a live Jira connection, issue edit permission, and a story point field on the board (`JIRA_STORY_POINTS_FIELD` can override its ID). Linear and mock tickets can be estimated in the room, without provider writeback. Live rooms are kept in server memory for 24 hours after the last activity; restarting the server clears them. The GitHub Pages demo simulates teammates in one browser and never writes to Jira.
+
+![Scrum Poker public demo with a sample sprint ticket, revealed votes, and estimate distribution](docs/assets/poker-demo.png)
 
 ## 🔌 Connect real tools
 
@@ -63,7 +72,7 @@ scripts/        Development, mock data, and integration checks
 .github/         Static demo deployment workflow
 ```
 
-Provider adapters normalize each tool's data into shared sprint, review, and document views. The public demo uses a separate static data source, so no private local files are part of the Pages artifact.
+Provider adapters normalize each tool's data into shared sprint, review, and document views. Scrum Poker uses the normalized active sprint tickets, so Jira, Linear, and mock data share the same voting flow. The public demo uses a separate static data source, so no private local files are part of the Pages artifact.
 
 ## 🧪 Verify changes
 
@@ -78,7 +87,7 @@ npm run build:demo
 
 ## 🛡️ Project status and privacy
 
-UniteDesk is an early open source project. It does **not** have user authentication yet. Keep the API on the default loopback address; do not expose it directly to the internet. Use short-lived, least-privilege provider tokens and never commit them. The GitHub Pages demo is read-only and contains only public sample data.
+UniteDesk is an early open source project. It does **not** have user authentication yet. Keep the API on the default loopback address; do not expose it directly to the internet. Poker rooms use a browser guest cookie, which is suitable for local testing but not public multi-tenant hosting. Use short-lived, least-privilege provider tokens and never commit them. The GitHub Pages demo contains only public sample data; its interactive Poker rooms are isolated to each browser.
 
 Planned work includes provider actions, safer multi-user authentication, easier connection setup, more integrations, and richer team workflows. See the repository issues to discuss what should come next.
 

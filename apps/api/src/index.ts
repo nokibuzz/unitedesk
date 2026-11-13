@@ -9,6 +9,7 @@ import { confirmStatusMapping, discoverStatusMapping, getActiveSprint } from './
 import { getTeamSettings, saveTeamSettings } from './settings/team.js';
 import { getReviewConnection, publicReviewConnection, saveReviewConnection } from './settings/code-review.js';
 import { getUsefulLinks, saveUsefulLinks } from './useful-links/service.js';
+import { pokerRouter } from './poker/routes.js';
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectDirectory = path.resolve(currentDirectory, '../../..');
@@ -20,6 +21,8 @@ const app = express();
 app.use(express.json({ limit: '128kb' }));
 const port = Number(process.env.PORT ?? 3001);
 const host = process.env.HOST?.trim() || '127.0.0.1';
+
+app.use('/api/poker', pokerRouter(projectDirectory));
 
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   throw new Error('PORT must be a number between 1 and 65535');

@@ -125,6 +125,7 @@ a:focus-visible {
   padding-top: clamp(92px, 14vh, 160px);
   padding-bottom: 90px;
 }
+.main-content.poker-main { padding-top: 38px; }
 
 .eyebrow {
   display: inline-flex;

@@ -34,7 +34,8 @@
     "test:links": "node --import tsx --test apps/api/src/useful-links/service.test.ts apps/web/tests/useful-links-search.test.ts",
     "test:review-config": "node --import tsx --test apps/api/src/settings/code-review.test.ts",
     "test:demo": "node --import tsx --test apps/web/tests/demo.test.ts",
+    "test:poker": "node --import tsx --test apps/api/src/poker/rooms.test.ts apps/api/src/poker/tickets.test.ts",
     "test:live": "npm run build && node scripts/test-live-integrations.mjs",
-    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:review-config && npm run test:linear && npm run test:github && npm run test:confluence && npm run test:github-docs && npm run test:notion-docs && npm run test:documents && npm run test:links && npm run test:demo"
+    "test": "npm run test:history && npm run test:daily && npm run test:reviews && npm run test:settings && npm run test:review-config && npm run test:linear && npm run test:github && npm run test:confluence && npm run test:github-docs && npm run test:notion-docs && npm run test:documents && npm run test:links && npm run test:poker && npm run test:demo"
   }
 }
