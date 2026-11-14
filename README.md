@@ -31,6 +31,10 @@ Scrum Poker can publish a confirmed story point estimate to a live Jira issue wh
 
 Open **[nokibuzz.github.io/unitedesk](https://nokibuzz.github.io/unitedesk/)**. Explore the sample sprint, start Daily mode, filter the Review Queue, search Knowledge, and open Useful links. Try **[Scrum Poker](https://nokibuzz.github.io/unitedesk/#/tools/poker)** or **[Team Retrospective](https://nokibuzz.github.io/unitedesk/#/tools/retro)** with sample teammates. The demo is hosted as a static GitHub Pages site; it does not need an API server.
 
+### 📱 Add the demo to your phone
+
+The public demo can be installed as a web app with the UniteDesk icon; there is no App Store or Play Store package. On Android, open the demo in Chrome and choose **⋮ → Install app** (or **Add to Home screen**). On iPhone, open it in Safari and choose **Share → Add to Home Screen**, then **Open as Web App** if offered. It launches from your home screen without a browser tab. The demo still uses synthetic data and needs an internet connection; installing it does not connect your Jira, GitLab, or other accounts. A local UniteDesk server must be reachable from the phone on a trusted network, and standard PWA installation outside localhost requires HTTPS.
+
 To run your own workspace locally:
 
 ```bash

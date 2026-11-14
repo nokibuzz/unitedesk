@@ -1,0 +1,25 @@
+{
+  "id": "./",
+  "name": "UniteDesk",
+  "short_name": "UniteDesk",
+  "description": "One clear view of your team's sprint, reviews, documentation, and tools.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f7f6",
+  "theme_color": "#141414",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
