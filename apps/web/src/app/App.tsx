@@ -37,7 +37,7 @@ export default function App() {
   function setDefaultSection(next: MainSection) { saveDefaultSection(next); setDefaultSectionState(next); }
   return <div className="app-shell">
     <header className="site-header"><div className="header-content">
-      <a className="brand" href={`#/${defaultSection}`} aria-label="UniteDesk home"><img className="brand-mark" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" /><span>UniteDesk</span></a>
+      <a className="brand" href={`#/${defaultSection}`} aria-label="UniteDesk home"><img className="brand-mark" src={`${import.meta.env.BASE_URL}favicon.svg?v=2`} alt="" /><span>UniteDesk</span></a>
       <nav className="site-nav" aria-label="Main navigation"><a href="#/sprint" aria-current={section === 'sprint' ? 'page' : undefined}>Sprint</a><a href="#/reviews" aria-current={section === 'reviews' ? 'page' : undefined}>Review Queue</a><a href="#/documents" aria-current={section === 'documents' ? 'page' : undefined}>Knowledge</a><a href="#/tools" aria-current={section === 'tools' || section === 'poker' || section === 'retro' ? 'page' : undefined}>Tools</a></nav>
       <UsefulLinksLauncher />
       <a className="settings-link" href="#/settings" aria-label="Settings" aria-current={section === 'settings' ? 'page' : undefined} title="Settings"><SettingsIcon /></a>
